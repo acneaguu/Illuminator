@@ -26,7 +26,7 @@ META = {
 class loadSim(mosaik_api.Simulator):
     def __init__(self):
         super().__init__(META)
-        self.eid_prefix = 'load_'  # every entity that we create will start with 'wind_'
+        self.eid_prefix = 'load_'  # every entity that we create will start with 'load_'
         self.entities = {}  # we store the model entity of our technology model
         self._cache = {}  # used in the step function to store the values after running the python model of the technology
         self.time = 0
