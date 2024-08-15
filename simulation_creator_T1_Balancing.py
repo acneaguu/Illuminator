@@ -11,10 +11,10 @@ from configuration.buildmodelset import *
 
 class simulation_creator_Balancing:
     
-    def __init__(self,Defined_models,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
+    def __init__(self,models,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
                           wind_inputs = None, battery_inputs = None):
-        self.Defined_models['model'] = Defined_models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
-        
+        self.Defined_models['model'] = models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
+        print(self.models)
         self.results_summary = pd.DataFrame() # Dataframe with ResLoad, Load, RES Gen, Battery SOC, Battery Flow
         
         self.create_simulation(day_of_year, number_of_houses, pv_inputs, 
@@ -104,7 +104,7 @@ class simulation_creator_Balancing:
         ctrl = ctrlsim.Ctrl(sim_start=START_DATE, soc_min=Battery_set['soc_min'], soc_max=Battery_set['soc_max'])
         
         #need to adapt especially outputfile!!!
-        RESULTS_SHOW_TYPE={'write2csv':True, 'dashboard_show':False, 'Finalresults_show':True,'database':False,'mqtt':False}
+        #RESULTS_SHOW_TYPE={'write2csv':True, 'dashboard_show':False, 'Finalresults_show':True,'database':False,'mqtt':False}
         self.collector = world.start('Collector', start_date=START_DATE, results_show=RESULTS_SHOW_TYPE, output_file=outputfile)
         self.monitor = self.collector.Monitor()
         

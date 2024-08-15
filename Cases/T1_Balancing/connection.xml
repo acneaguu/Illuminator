@@ -25,30 +25,6 @@
     <more/>
   </row>
   <row>
-    <index>3</index>
-    <send>ctrl</send>
-    <receive>battery</receive>
-    <messages>flow2b</messages>
-    <messager>flow2b</messager>
-    <more>async_requests=True</more>
-  </row>
-  <row>
-    <index>8</index>
-    <send>battery</send>
-    <receive>monitor</receive>
-    <messages>p_out</messages>
-    <messager>p_out</messager>
-    <more/>
-  </row>
-  <row>
-    <index>9</index>
-    <send>battery</send>
-    <receive>monitor</receive>
-    <messages>soc</messages>
-    <messager>soc</messager>
-    <more/>
-  </row>
-  <row>
     <index>10</index>
     <send>pv[0]</send>
     <receive>monitor</receive>
