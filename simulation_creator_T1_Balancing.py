@@ -11,14 +11,17 @@ from configuration.buildmodelset import *
 
 class simulation_creator_Balancing:
     
-    def __init__(self,Defined_models):
+    def __init__(self,Defined_models,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
+                          wind_inputs = None, battery_inputs = None):
         self.Defined_models = Defined_models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
         
         self.results_summary = pd.DataFrame() # Dataframe with ResLoad, Load, RES Gen, Battery SOC, Battery Flow
         
+        self.create_simulation(day_of_year, number_of_houses, pv_inputs, 
+                          wind_inputs, battery_inputs)
         #maybe move parts to initialization function
-    def create_simulation(self, day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
-                          wind_inputs = None, battery_inputs = None):
+    def create_simulation(self, day_of_year, number_of_houses, pv_inputs, 
+                          wind_inputs, battery_inputs):
         sim_config_file = "Cases/T1_Balancing/"
         sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
         sim_config = {row[1]: {row[2]: row[3]} for row in sim_config_ddf.values}
