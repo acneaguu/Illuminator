@@ -36,4 +36,10 @@
     <method>python</method>
     <location>Controllers.Controller_ResLoad.controller_T1_mosaik:controlSim</location>
   </row>
+  <row>
+    <index>6</index>
+    <model>Battery</model>
+    <method>python</method>
+    <location>Models.Battery.battery_mosaik:BatteryholdSim</location>
+  </row>
 </data>

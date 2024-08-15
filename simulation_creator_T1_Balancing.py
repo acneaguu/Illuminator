@@ -13,7 +13,7 @@ class simulation_creator_Balancing:
     
     def __init__(self,Defined_models,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
                           wind_inputs = None, battery_inputs = None):
-        self.Defined_models = Defined_models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
+        self.Defined_models['model'] = Defined_models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
         
         self.results_summary = pd.DataFrame() # Dataframe with ResLoad, Load, RES Gen, Battery SOC, Battery Flow
         
@@ -22,8 +22,13 @@ class simulation_creator_Balancing:
         #maybe move parts to initialization function
     def create_simulation(self, day_of_year, number_of_houses, pv_inputs, 
                           wind_inputs, battery_inputs):
+        
         sim_config_file = "Cases/T1_Balancing/"
-        sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
+        if 'Battery'in self.Defined_models['model']:
+            sim_config_ddf = pd.read_xml(sim_config_file + 'config_wBat.xml')
+        else:
+            sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
+            
         sim_config = {row[1]: {row[2]: row[3]} for row in sim_config_ddf.values}
 
         tosh = sim_config_ddf[sim_config_ddf['method'] == 'connect']
@@ -100,8 +105,8 @@ class simulation_creator_Balancing:
         
         #need to adapt especially outputfile!!!
         RESULTS_SHOW_TYPE={'write2csv':True, 'dashboard_show':False, 'Finalresults_show':True,'database':False,'mqtt':False}
-        collector = world.start('Collector', start_date=START_DATE, results_show=RESULTS_SHOW_TYPE, output_file=outputfile)
-        monitor = collector.Monitor()
+        self.collector = world.start('Collector', start_date=START_DATE, results_show=RESULTS_SHOW_TYPE, output_file=outputfile)
+        self.monitor = self.collector.Monitor()
         
         #create simulations for different models
         for model_i in self.Defined_models.iterrows():
@@ -145,5 +150,8 @@ class simulation_creator_Balancing:
     
     def summarize_results(self):
         #table with averages for each hour -> interesting variable only
+        results_hourly_avg = self.results_summary.resample('H').mean()
+        print(results_hourly_avg)
+        
         return 
 
