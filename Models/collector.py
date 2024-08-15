@@ -107,8 +107,6 @@ class Collector(mosaik_api.Simulator):
                 # Write the merged data to CSV
                 combined_df.to_csv(self.output_file, mode='w', header=True)
 
-
-
         if self.results_show['database']==True:
             today_date = pd.Timestamp.now().normalize()
 
