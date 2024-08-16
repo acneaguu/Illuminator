@@ -1,5 +1,7 @@
 import subprocess
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import mosaik
 import mosaik.util
 import numpy as np
@@ -13,6 +15,7 @@ class simulation_creator_Balancing:
     
     def __init__(self,components,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
                           wind_inputs = None, battery_inputs = None):
+        self.day_of_year = day_of_year
         self.Defined_models = {}
         self.Defined_models['model'] = components # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
         print(self.Defined_models)
@@ -155,7 +158,18 @@ class simulation_creator_Balancing:
         return
     
     def summarize_results(self):
-        #table with averages for each hour -> interesting variable only
+        #residual load plot 
+        plt.plot(self.results_summary.index, self.results_summary['res_load'])
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        plt.title(f'Residual Load {self.day_of_year}')
+        plt.xlabel('Time')
+        plt.ylabel('Load')
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+        
+        #table with averages for each hour -> adjust so that interesting variable only
         results_hourly_avg = self.results_summary.resample('H').mean()
         print(results_hourly_avg)
         
