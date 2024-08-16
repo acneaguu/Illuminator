@@ -33,7 +33,7 @@
     <more>async_requests=True</more>
   </row>
   <row>
-    <index>8</index>
+    <index>4</index>
     <send>battery</send>
     <receive>monitor</receive>
     <messages>p_out</messages>
@@ -41,7 +41,7 @@
     <more/>
   </row>
   <row>
-    <index>9</index>
+    <index>5</index>
     <send>battery</send>
     <receive>monitor</receive>
     <messages>soc</messages>
@@ -49,7 +49,7 @@
     <more/>
   </row>
   <row>
-    <index>10</index>
+    <index>6</index>
     <send>pv[0]</send>
     <receive>monitor</receive>
     <messages>pv_gen</messages>
@@ -57,7 +57,7 @@
     <more/>
   </row>
   <row>
-    <index>11</index>
+    <index>7</index>
     <send>wind[0]</send>
     <receive>monitor</receive>
     <messages>wind_gen</messages>
@@ -65,7 +65,7 @@
     <more/>
   </row>
   <row>
-    <index>12</index>
+    <index>8</index>
     <send>load[0]</send>
     <receive>monitor</receive>
     <messages>load_dem</messages>
@@ -73,7 +73,7 @@
     <more/>
   </row>
   <row>
-    <index>13</index>
+    <index>9</index>
     <send>ctrl</send>
     <receive>monitor</receive>
     <messages>flow2b</messages>

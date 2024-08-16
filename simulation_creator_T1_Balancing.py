@@ -11,10 +11,11 @@ from configuration.buildmodelset import *
 
 class simulation_creator_Balancing:
     
-    def __init__(self,models,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
+    def __init__(self,components,day_of_year = "2012-06-01", number_of_houses = 1, pv_inputs = None, 
                           wind_inputs = None, battery_inputs = None):
-        self.Defined_models['model'] = models # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
-        print(self.models)
+        self.Defined_models = {}
+        self.Defined_models['model'] = components # Defined models includes all used components as defined in ipynb file eg. 'PV', 'Wind', 'Load', 'Battery'
+        print(self.Defined_models)
         self.results_summary = pd.DataFrame() # Dataframe with ResLoad, Load, RES Gen, Battery SOC, Battery Flow
         
         self.create_simulation(day_of_year, number_of_houses, pv_inputs, 
@@ -25,9 +26,11 @@ class simulation_creator_Balancing:
         
         sim_config_file = "Cases/T1_Balancing/"
         if 'Battery'in self.Defined_models['model']:
-            sim_config_ddf = pd.read_xml(sim_config_file + 'config_wBat.xml')
+            sim_config_ddf = pd.read_xml('Cases/T1_Balancing/config_wBat.xml')
+            #sim_config_ddf = pd.read_xml(sim_config_file + 'config_wBat.xml')
         else:
-            sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
+            #sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
+            sim_config_ddf = pd.read_xml('Cases/T1_Balancing/config.xml')
             
         sim_config = {row[1]: {row[2]: row[3]} for row in sim_config_ddf.values}
 
@@ -42,7 +45,10 @@ class simulation_creator_Balancing:
 
             subprocess.run(['/bin/bash', '/home/illuminator/Desktop/Illuminator/configuration/run.sh'])
 
-        connection = pd.read_xml(sim_config_file + 'connection.xml')
+        if 'Battery'in self.Defined_models['model']:
+            connection = pd.read_xml(sim_config_file + '\connection_wBat.xml')
+        else:
+            connection = pd.read_xml(sim_config_file + '\connection.xml')
 
         #Interval : currently one specific day in 15 minute intervals, can be adjusted for other time intervals 
         START_DATE = datetime.strptime(day_of_year, "%Y-%m-%d")

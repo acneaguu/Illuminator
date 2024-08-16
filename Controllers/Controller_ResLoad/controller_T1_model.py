@@ -1,26 +1,22 @@
 class Controller_ResLoad:
     
     # make adaptable with different combinations of RES generation and 
-    def __init__(self, load, pv_model, wind_model, battery_model = None):
+    def __init__(self, soc_min = None,soc_max = None):
         
-        self.load = load
-        self.pv_model = pv_model
-        self.wind_model = wind_model
-        
-        if battery_model != None:
-            self.soc_max_b = battery_model.soc_max
-            self.soc_min_b = battery_model.soc_min
+        if soc_min != None and soc_max != None:
+            self.soc_max_b = soc_max
+            self.soc_min_b = soc_min
 
             self.dump = 0 # check if needed -> maybe later
             self.flow_b = 0 # flow_b is the flow to the battery so negative when discharge, positive when charge
 
         
-    def control(self, soc , pv_gen, load_dem, wind_gen):
+    def control(self, pv_gen, load_dem, wind_gen, soc = None):
 
         self.soc_b = soc
         residual_load = load_dem - wind_gen + pv_gen # kW
 
-        if self.battery_model != None:
+        if self.soc_max_b != None:
             if residual_load > 0:  
                 # demand not satisfied -> discharge battery if possible
                 if self.soc_b > self.soc_min_b:  # checking if soc is above minimum
@@ -42,4 +38,4 @@ class Controller_ResLoad:
 
             #demand_res = residual_load + self.flow_b
         
-        return self.flow_b, residual_load 
+        return residual_load, self.flow_b 

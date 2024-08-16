@@ -2,11 +2,11 @@ import mosaik_api
 import pandas as pd
 #import Controller.controller_model as controller_model
 try:
-    import Models.Controller.controller_model as controller_model
+    import Controllers.Controller_ResLoad.controller_T1_model as controller_model
 except ModuleNotFoundError:
-    import controller_model as controller_model
+    import controller_T1_model as controller_model
 else:
-    import Models.Controller.controller_model as controller_model
+    import Controllers.Controller_ResLoad.controller_T1_model as controller_model
 #import Battery.model as batterymodel
 import sys
 sys.path.insert(1,'/home/illuminator/Desktop/Final_illuminator')
@@ -21,9 +21,7 @@ else:
 import itertools
 
 # August 2024 JT Riederer
-# this code is based on original controller mosaik file in illuminator
-# 1st step remove hydorgen storage and other unused componenets for T1 -> done
-# 2nd step ensure adaptability with and without Battery -> pending
+# double check if need to adapt for without battery case
 
 META = {
     'type': 'event-based',
