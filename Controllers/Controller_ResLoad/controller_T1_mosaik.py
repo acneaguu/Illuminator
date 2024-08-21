@@ -69,7 +69,7 @@ class controlSim(mosaik_api.Simulator):
 
         for i in range(num):
             eid = '%s%d' % (self.eid_prefix, i)
-            model_instance = controller_model.controller_python(**model_params)  #1
+            model_instance = controller_model.Controller_ResLoad(**model_params)  #1
             self.entities[eid] = model_instance  #2
             # print(self.entities)
             # self.soc_max[eid] = soc_max

@@ -52,8 +52,8 @@
     <index>6</index>
     <send>ctrl</send>
     <receive>monitor</receive>
-    <messages>flow2b</messages>
-    <messager>flow2b</messager>
+    <messages>res_load</messages>
+    <messager>res_load</messager>
     <more/>
   </row>
 </data>

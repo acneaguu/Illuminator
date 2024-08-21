@@ -80,4 +80,12 @@
     <messager>flow2b</messager>
     <more/>
   </row>
+  <row>
+    <index>10</index>
+    <send>ctrl</send>
+    <receive>monitor</receive>
+    <messages>res_load</messages>
+    <messager>res_load</messager>
+    <more/>
+  </row>
 </data>

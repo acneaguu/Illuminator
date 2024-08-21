@@ -37,5 +37,6 @@ class Controller_ResLoad:
                 #demand_res = residual_load
 
             #demand_res = residual_load + self.flow_b
-        
+        print('residual load: ' + str(residual_load))
+        print('battery flow: ' + str(self.flow_b))
         return residual_load, self.flow_b 
