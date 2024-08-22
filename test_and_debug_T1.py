@@ -199,7 +199,24 @@ for model_i in Defined_models.iterrows():
         battery = batterysim.Batteryset(sim_start=START_DATE, initial_set=Battery_initialset,
                                         battery_set=Battery_set)
 
-        # residual load plot
+for i, row in connection.iterrows():
+    try:
+        row['more']
+    except KeyError:
+        world.connect(eval(row['send']), eval(row['receive']), (row['messages'], row['messager']))
+    else:
+        if row['more'] == 'async_requests=True':
+            # world.connect(eval(row['send']),eval(row['receive']),(row['messages'],row['messager']),
+            #               time_shifted=True, initial_data={row['messages']: 0})
+            world.connect(eval(row['send']), eval(row['receive']), (row['messages'], row['messager']), async_requests=True)
+        else:
+            world.connect(eval(row['send']), eval(row['receive']), (row['messages'], row['messager']))
+if realtimefactor == 0:
+    world.run(until=end)
+else:
+    world.run(until=end, rt_factor=realtimefactor)
+
+def summarise_results(outputfile):
     result_pd_df = pd.read_csv(outputfile)
     plt.plot(results_summary.index, result_pd_df['res_load'])
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
@@ -214,3 +231,4 @@ for model_i in Defined_models.iterrows():
         # table with averages for each hour -> adjust so that interesting variable only
     results_hourly_avg = results_summary.resample('H').mean()
     print(results_hourly_avg)
+    return
