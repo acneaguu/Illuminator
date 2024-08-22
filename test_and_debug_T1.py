@@ -11,6 +11,8 @@ import time
 from datetime import datetime
 from configuration.buildmodelset import *
 
+# try using csv to save results -> check order, check configuration, check controller -> make better later
+
 #Notebook Part
 day_of_year = '2012-06-01 00:00:00'
 
@@ -61,7 +63,8 @@ results_summary = pd.DataFrame()  # Dataframe with ResLoad, Load, RES Gen, Batte
 outputfile = 'Notebooks/results_T1_1.csv'
 
 sim_config_file = "Cases/T1_Balancing/"
-if 'Battery' in Defined_models['model']:
+#if 'Battery' in Defined_models['model']:
+if bat_help == 1:
     sim_config_ddf = pd.read_xml('Cases/T1_Balancing/config_wBat.xml')
     # sim_config_ddf = pd.read_xml(sim_config_file + 'config_wBat.xml')
 else:
@@ -81,7 +84,8 @@ if not tosh.empty:
 
     subprocess.run(['/bin/bash', '/home/illuminator/Desktop/Illuminator/configuration/run.sh'])
 
-if 'Battery' in Defined_models['model']:
+#if 'Battery' in Defined_models['model']:
+if bat_help == 1:
     connection = pd.read_xml(sim_config_file + '\connection_wBat.xml')
 else:
     connection = pd.read_xml(sim_config_file + '\connection.xml')
