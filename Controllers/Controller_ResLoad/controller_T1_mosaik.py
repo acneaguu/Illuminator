@@ -29,12 +29,12 @@ META = {
         'Ctrl': {
             'public': True,
             'params': ['sim_start', 'soc_min', 'soc_max'],
-            'attrs': ['controller_id', 'flow2b', 'wind_gen', 'load_dem', 'pv_gen', 'soc',  'dump'
+            'attrs': ['controller_id', 'res_load', 'flow2b', 'wind_gen', 'load_dem', 'pv_gen', 'soc'
                       ],
             'trigger': [],
         },
     },
-}
+} # left out attribute dump for now 240822
 
 
 class controlSim(mosaik_api.Simulator):
@@ -107,6 +107,8 @@ class controlSim(mosaik_api.Simulator):
             for attr in attrs:
                 if attr == 'flow2b':
                     data[eid][attr] = self._cache[eid]['flow2b']
+                elif attr == 'res_load':
+                    data[eid][attr] = self._cache[eid]['res_load']
                # elif attr == 'dump': -> dump maybe add later Jana 240822
                 #    data[eid][attr] = self._cache[eid]['dump']
         return data

@@ -76,16 +76,16 @@
     <index>9</index>
     <send>ctrl</send>
     <receive>monitor</receive>
-    <messages>flow2b</messages>
-    <messager>flow2b</messager>
+    <messages>res_load</messages>
+    <messager>res_load</messager>
     <more/>
   </row>
   <row>
     <index>10</index>
     <send>ctrl</send>
     <receive>monitor</receive>
-    <messages>res_load</messages>
-    <messager>res_load</messager>
+    <messages>flow2b</messages>
+    <messager>flow2b</messager>
     <more/>
   </row>
 </data>
