@@ -155,7 +155,7 @@ ctrl = ctrlsim.Ctrl(sim_start=START_DATE, soc_min=Battery_set['soc_min'], soc_ma
 
 # need to adapt especially outputfile!!!
 RESULTS_SHOW_TYPE={'write2csv':True, 'dashboard_show':False, 'Finalresults_show':False,'database':False,'mqtt':False}
-collector = world.start('Collector', start_date=START_DATE, results_show=RESULTS_SHOW_TYPE, output_file=results_summary)
+collector = world.start('Collector', start_date=START_DATE, results_show=RESULTS_SHOW_TYPE, output_file=outputfile)
 monitor = collector.Monitor()
 
 # create simulations for different models
@@ -200,7 +200,8 @@ for model_i in Defined_models.iterrows():
                                         battery_set=Battery_set)
 
         # residual load plot
-    plt.plot(results_summary.index, results_summary['res_load'])
+    result_pd_df = pd.read_csv(outputfile)
+    plt.plot(results_summary.index, result_pd_df['res_load'])
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     plt.title(f'Residual Load {day_of_year}')
     plt.xlabel('Time')

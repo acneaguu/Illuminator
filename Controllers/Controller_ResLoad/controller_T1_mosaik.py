@@ -53,35 +53,25 @@ class controlSim(mosaik_api.Simulator):
     def init(self, sid, time_resolution, step_size=1):
         self.step_size = step_size
         self.sid = sid
-        # print('hi, you have entered init')  # working (20220524)
         self.time_resolution = time_resolution
-        # print('Exited init os SimAPI')  # working (20220524)
         return self.meta
 
     def create(self, num, model, sim_start, **model_params):
-        # print('hi, you have entered create of SimAPI')  # working (20220524)
         self.start = pd.to_datetime(sim_start)
-        # print(type(self.entities))
-        # next_eid = len(self.entities)
-        # print('from create of SimAPI:', next_eid)
         self._entities = []
-        # print(next_eid)  # working (20220524)
+
 
         for i in range(num):
             eid = '%s%d' % (self.eid_prefix, i)
-            model_instance = controller_model.Controller_ResLoad(**model_params)  #1
-            self.entities[eid] = model_instance  #2
-            # print(self.entities)
-            # self.soc_max[eid] = soc_max
+            model_instance = controller_model.Controller_ResLoad(**model_params)
+            self.entities[eid] = model_instance
             self._entities.append({'eid': eid, 'type': model})
         return self._entities
 
     def step(self, time, inputs, max_advance):
-        # inputs is a dictionary, which contains another dictionary.
-        # print(inputs)
         current_time = (self.start +
                         pd.Timedelta(time * self.time_resolution,
-                                     unit='seconds'))  # timedelta represents a duration of time
+                                     unit='seconds'))
         print('from controller %%%%%%%%%', current_time)
         _cache = {}
         u = []
@@ -92,12 +82,6 @@ class controlSim(mosaik_api.Simulator):
             p = 0
             l = 0
             for attr, vals in attrs.items():
-                #print('#attr: ', attr)
-                # print('#vals: ', vals)
-
-                # s=0
-                # h=0
-                ###################################
                 if attr == 'wind_gen':
                     w = sum(vals.values())
                 elif attr == 'pv_gen':
@@ -119,15 +103,12 @@ class controlSim(mosaik_api.Simulator):
     def get_data(self, outputs):
         data = {}
         for eid, attrs in outputs.items():
-            # model = self.entities[eid]
-            # data['time'] = self.time
             data[eid] = {}
             for attr in attrs:
-                # collect attributes for output file as needed:
                 if attr == 'flow2b':
                     data[eid][attr] = self._cache[eid]['flow2b']
-                elif attr == 'dump':
-                    data[eid][attr] = self._cache[eid]['dump']
+               # elif attr == 'dump': -> dump maybe add later Jana 240822
+                #    data[eid][attr] = self._cache[eid]['dump']
         return data
 def main():
     mosaik_api.start_simulation(controlSim(), 'Controller-Illuminator')

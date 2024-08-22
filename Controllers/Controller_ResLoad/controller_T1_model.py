@@ -39,7 +39,8 @@ class Controller_ResLoad:
             #demand_res = residual_load + self.flow_b
         print('residual load: ' + str(res_load))
         print('battery flow: ' + str(self.flow_b))
-        if soc_min != None:
-            return res_load, self.flow_b
+        if self.soc_min != None:
+            re_params = {'res_load': res_load, 'flow2b': self.flow_b}
         else:
-            return res_load
+            re_params = {'res_load': res_load}
+        return re_params
