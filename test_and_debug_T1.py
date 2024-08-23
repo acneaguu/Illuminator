@@ -60,7 +60,7 @@ else:
 # Class part
 
 results_summary = pd.DataFrame()  # Dataframe with ResLoad, Load, RES Gen, Battery SOC, Battery Flow
-outputfile = 'Notebooks/results_T1_1.csv'
+outputfile = 'Notebooks/results_T1_2bat.csv'
 
 sim_config_file = "Cases/T1_Balancing/"
 #if 'Battery' in Defined_models['model']:
@@ -216,19 +216,27 @@ if realtimefactor == 0:
 else:
     world.run(until=end, rt_factor=realtimefactor)
 
-def summarise_results(outputfile):
-    result_pd_df = pd.read_csv(outputfile)
-    plt.plot(results_summary.index, result_pd_df['res_load'])
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    plt.title(f'Residual Load {day_of_year}')
-    plt.xlabel('Time')
-    plt.ylabel('Load')
-    plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
+
+result_pd_df = pd.read_csv(outputfile, index_col=0)
+result_pd_df.index = pd.to_datetime(result_pd_df.index)
+print(result_pd_df.index)
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(result_pd_df.index, result_pd_df['Controller-0.ctrl_0-res_load'],
+        color='blue', linestyle='-', marker='o', markersize=4, linewidth=2, label='Residual Load')
+ax.plot(result_pd_df.index, result_pd_df['Load-0.load_0-load_dem'],
+        color='red', linestyle='--', marker='x', markersize=4, linewidth=2, label='Load Demand')
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))  # Show every hour
+ax.xaxis.set_minor_locator(mdates.MinuteLocator(interval=15))  # Minor ticks every 15 minutes
+ax.set_title(f'Residual Load on Day {day_of_year}', fontsize=16)
+ax.set_xlabel('Time', fontsize=14)
+ax.set_ylabel('Load (W)', fontsize=14)
+plt.xticks(rotation=45, ha='right')
+ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+ax.legend(loc='upper right', fontsize=12)
+plt.tight_layout()
+plt.show()
 
         # table with averages for each hour -> adjust so that interesting variable only
-    results_hourly_avg = results_summary.resample('H').mean()
-    print(results_hourly_avg)
-    return
+results_hourly_avg = result_pd_df.resample('H').mean()
+print(results_hourly_avg)

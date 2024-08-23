@@ -29,7 +29,7 @@ META = {
         'Ctrl': {
             'public': True,
             'params': ['sim_start', 'soc_min', 'soc_max'],
-            'attrs': ['controller_id', 'res_load', 'flow2b', 'wind_gen', 'load_dem', 'pv_gen', 'soc'
+            'attrs': ['controller_id', 'res_load', 'flow2b', 'wind_gen', 'load_dem', 'pv_gen', 'soc','dump'
                       ],
             'trigger': [],
         },
@@ -109,8 +109,9 @@ class controlSim(mosaik_api.Simulator):
                     data[eid][attr] = self._cache[eid]['flow2b']
                 elif attr == 'res_load':
                     data[eid][attr] = self._cache[eid]['res_load']
-               # elif attr == 'dump': -> dump maybe add later Jana 240822
-                #    data[eid][attr] = self._cache[eid]['dump']
+                elif attr == 'dump':
+                    data[eid][attr] = self._cache[eid]['dump']
+
         return data
 def main():
     mosaik_api.start_simulation(controlSim(), 'Controller-Illuminator')

@@ -6,41 +6,50 @@ class Controller_ResLoad:
         if soc_min != None and soc_max != None:
             self.soc_max_b = soc_max
             self.soc_min_b = soc_min
+            self.bat_active = 1
+        else:
+            self.bat_active = 0
 
-            self.dump = 0 # check if needed -> maybe later
-            self.flow_b = 0 # flow_b is the flow to the battery so negative when discharge, positive when charge
+        self.dump = 0  # check if needed -> maybe later
+        self.flow_b = 0  # flow_b is the flow to the battery so negative when discharge, positive when charge
 
-        
-    def control(self, pv_gen, load_dem, wind_gen, soc = None):
+    def control(self, wind_gen, pv_gen, load_dem, soc = None):
 
         self.soc_b = soc
-        self.res_load = load_dem - wind_gen + pv_gen # kW
+        print('Load dem: ' + str(load_dem))
+        print('pv: ' + str(pv_gen))
+        print('wind: ' + str(wind_gen))
+        self.res_load = load_dem - wind_gen - pv_gen # kW
 
-        if self.soc_max_b != None:
+        if self.bat_active == 1:
             if self.res_load > 0:
                 # demand not satisfied -> discharge battery if possible
                 if self.soc_b > self.soc_min_b:  # checking if soc is above minimum
                     print('Discharge Battery')
                     self.flow_b = -min(self.res_load, self.soc_b-self.soc_min_b)
+                    self.dump = 0
+                    #self.soc_b = self.soc_b + self.flow_b soc is not updated in controller
                           
             elif self.res_load < 0:
             
                 if self.soc_b < self.soc_max_b:
                     print('Charge Battery')
-                    self.flow_b = min((-self.res_load), self.soc_max_b-self.soc_b)
-                
-                    print('Excess generation that cannot be stored: ' + str(self.res_load-self.flow_b))
+                    self.flow_b = min((-self.res_load), (self.soc_max_b-self.soc_b))
+                    #self.soc_b = self.soc_b + self.flow_b soc is not updated in controller
+                    self.dump = -self.res_load-self.flow_b
+                    print('Excess generation that cannot be stored: ' + str(-self.res_load-self.flow_b))
 
             else:
-                print('No Residual Load, RES production completely covers demand')
+                print('No Residual Load, RES production exactly covers demand')
                 self.flow_b = 0
+                self.dump = 0
                 #demand_res = residual_load
 
             #demand_res = residual_load + self.flow_b
         print('residual load: ' + str(self.res_load))
         print('battery flow: ' + str(self.flow_b))
-        if self.soc_min_b != None:
-            re_params = {'res_load': self.res_load, 'flow2b': self.flow_b}
-        else:
-            re_params = {'res_load': self.res_load}
+        #if self.bat_active == 1:
+        re_params = {'flow2b': self.flow_b,'res_load': self.res_load,'dump': self.dump}
+        #else:
+            #re_params = {'res_load': self.res_load,'dump': self.dump}
         return re_params
