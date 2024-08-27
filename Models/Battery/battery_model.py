@@ -82,6 +82,7 @@ class BatteryModel:
             else:
                 if energy2charge <= energy_capacity:
                     self.soc = self.soc + (energy2charge / self.max_energy * 100)
+                    print('battery charged -> soc updated')
                     self.powerout = flow
                     self.flag = 0  # Set flag as ready to discharge or charge
 
@@ -89,6 +90,7 @@ class BatteryModel:
                     self.powerout = energy_capacity / self.charge_efficiency / hours
                     # warn('\n Home Battery is fully discharged!! Cannot deliver more energy!')
                     self.soc = self.soc_max
+                    print('battery fully charged')
                     self.flag = 1  # Set flag as 1 to show fully discharged state
         self.soc = round(self.soc, 3)
         re_params = {'p_out': self.powerout,

@@ -6,6 +6,7 @@ import mosaik
 import mosaik.util
 import numpy as np
 import pandas as pd
+from IPython.display import display
 from mosaik.util import connect_many_to_one
 import time
 from datetime import datetime
@@ -28,7 +29,7 @@ class simulation_creator_Balancing:
                           wind_inputs, battery_inputs):
         
         sim_config_file = "Cases/T1_Balancing/"
-        if 'Battery'in self.Defined_models['model']:
+        if 'Battery' in self.Defined_models['model'].values:
             sim_config_ddf = pd.read_xml('../Cases/T1_Balancing/config_wBat.xml')
             battery_active = 1
             self.outputfile = '../Notebooks/results_T1_Res_Bat.csv'
@@ -37,6 +38,7 @@ class simulation_creator_Balancing:
             #sim_config_ddf = pd.read_xml(sim_config_file + 'config.xml')
             sim_config_ddf = pd.read_xml('../Cases/T1_Balancing/config.xml')
             battery_active = 0
+            print('battery not active')
             self.outputfile = '../Notebooks/results_T1_Res.csv'
 
         sim_config = {row[1]: {row[2]: row[3]} for row in sim_config_ddf.values}
@@ -193,10 +195,10 @@ class simulation_creator_Balancing:
         return
     
     def summarize_results(self):
-        #residual load plot 
+        #residual load plot
+        day_of_year = datetime.strptime(self.day_of_year, '%Y-%m-%d')
         result_pd_df = pd.read_csv(self.outputfile, index_col=0)
         result_pd_df.index = pd.to_datetime(result_pd_df.index)
-        print(result_pd_df.index)
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.plot(result_pd_df.index, result_pd_df['Controller-0.ctrl_0-res_load'],
                 color='blue', linestyle='-', marker='o', markersize=4, linewidth=2, label='Residual Load')
@@ -205,9 +207,9 @@ class simulation_creator_Balancing:
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))  # Show every hour
         ax.xaxis.set_minor_locator(mdates.MinuteLocator(interval=15))  # Minor ticks every 15 minutes
-        ax.set_title(f'Residual Load {self.day_of_year.strftime("%d-%m-%Y")}', fontsize=16)
+        ax.set_title(f'Residual Load {day_of_year.strftime("%d-%m-%Y")}', fontsize=16)
         ax.set_xlabel('Time', fontsize=14)
-        ax.set_ylabel('Load (W)', fontsize=14)
+        ax.set_ylabel('Load (kW)', fontsize=14)
         plt.xticks(rotation=45, ha='right')
         ax.grid(True, which='both', linestyle='--', linewidth=0.5)
         ax.legend(loc='upper right', fontsize=12)
@@ -215,8 +217,19 @@ class simulation_creator_Balancing:
         plt.show()
 
         # table with averages for each hour -> adjust so that interesting variable only
-        results_hourly_avg = result_pd_df.resample('H').mean()
-        print(results_hourly_avg)
+        results_hourly_avg = result_pd_df.resample('H').sum()
+
+        styled_df = results_hourly_avg.style.set_properties(**{
+            'background-color': '#f9f9f9',
+            'border-color': 'black',
+            'border-width': '1px',
+            'border-style': 'solid',
+            'color': 'black',
+            'font-family': 'Arial',
+            'text-align': 'center'
+        }).set_caption("Hourly Simulation results")
+
+        display(styled_df)
         
         return 
 
