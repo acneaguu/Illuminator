@@ -21,13 +21,12 @@ def plot_load_profile(load_df, day_of_year, number_houses):
     end_time = start_time.replace(hour=23, minute=45, second=00)
 
     load_doy = load_houses.loc[start_time : end_time]
-    load_doy_max = max(load_doy['load'])
 
     #layered plot to display different generation
     layers = []
     remaining_load = load_doy['load'].copy()
     for source_name, source_value in electricity_mix_nl.items():
-        max_gen_source = source_value * load_doy_max
+        max_gen_source = source_value * load_doy['load']
         # The generation for the current source is either the source's value or the remaining load (whichever is smaller)
         source_generation = np.minimum(remaining_load, max_gen_source)
         layers.append(source_generation)
