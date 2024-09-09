@@ -20,6 +20,7 @@ class PV_py_model:
         self.resolution = resolution
         self.time_interval = self.resolution / 60
 
+
     def sun_azimuth(self):  # need to load sun_az
         sun_azimuth = self.sun_az
         return sun_azimuth
@@ -80,7 +81,6 @@ class PV_py_model:
         # this is for the DC output from the number of panes we require (calculated above) at every hour
         #p_dc = self.Temp_effect() * num_of_modules * self.m_area * self.total_irr()
         total_m_area = num_of_modules * self.m_area
-
         # AC output at every hour from all the panels (a solar farm)
 
         if self.output_type == 'energy':
@@ -89,7 +89,6 @@ class PV_py_model:
         elif self.output_type == 'power':
             p_ac = ((total_m_area * self.total_irr() *
                     self.Temp_effect() * inv_eff * mppt_eff * losses) )  # kW
-
         return {'pv_gen': p_ac, 'total_irr': self.g_aoi}
 
     def connect(self, G_Gh, G_Dh, G_Bn, Ta, hs, FF, Az):

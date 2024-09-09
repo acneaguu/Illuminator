@@ -104,8 +104,8 @@ print(Pv_DATA)
 # other inputs defaults
 pv_panel_set = {'Module_area': 1.26, 'NOCT': 44, 'Module_Efficiency': 0.198, 'Irradiance_at_NOCT': 800,
                 # panel specs -> maybe adjust so number of modules can be changed
-                'Power_output_at_STC': 250, 'peak_power': 600}
-pv_set = {'m_tilt': 14, 'm_az': 180, 'cap': 500, 'output_type': 'power'}
+                'Power_output_at_STC': 0.250, 'peak_power': 0.600}
+pv_set = {'m_tilt': 14, 'm_az': 180, 'cap': 0.500, 'output_type': 'power'}
 
 # update inputs if given
 # PV
@@ -118,7 +118,7 @@ pv_set.update(pv_set_updates)
 load_set = {'houses': number_of_houses, 'output_type': 'power'}
 
 # Wind
-Wind_set = {'p_rated': 300, 'u_rated': 10.3, 'u_cutin': 2.8, 'u_cutout': 25, 'cp': 0.40, 'diameter': 22,
+Wind_set = {'p_rated': 0.300, 'u_rated': 10.3, 'u_cutin': 2.8, 'u_cutout': 25, 'cp': 0.40, 'diameter': 1.5,
             'output_type': 'power'}  # wind specs
 wind_set_updates = {key: wind_inputs[key] for key in wind_inputs if key in Wind_set}
 Wind_set.update(wind_set_updates)

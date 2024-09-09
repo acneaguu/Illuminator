@@ -69,8 +69,8 @@ class simulation_creator_Balancing:
         
         #other inputs defaults
         pv_panel_set ={'Module_area': 1.26, 'NOCT': 44, 'Module_Efficiency': 0.198, 'Irradiance_at_NOCT': 800,  #panel specs -> maybe adjust so number of modules can be changed
-          'Power_output_at_STC': 250,'peak_power':600}
-        pv_set={'m_tilt':14,'m_az':180,'cap':500,'output_type':'power'}
+          'Power_output_at_STC': 0.25,'peak_power':0.6}
+        pv_set={'m_tilt':14,'m_az':180,'cap':0.5,'output_type':'power'}
         
         #update inputs if given
         #PV
@@ -83,7 +83,7 @@ class simulation_creator_Balancing:
         load_set={'houses': number_of_houses, 'output_type':'power'} 
 
         #Wind
-        Wind_set={'p_rated':300, 'u_rated':10.3, 'u_cutin':2.8, 'u_cutout':25, 'cp':0.40, 'diameter':22, 
+        Wind_set={'p_rated':0.5, 'u_rated':10.3, 'u_cutin':2.8, 'u_cutout':25, 'cp':0.40, 'diameter':2,
                   'output_type':'power'} #wind specs
         wind_set_updates = {key: wind_inputs[key] for key in wind_inputs if key in Wind_set}
         Wind_set.update(wind_set_updates)
@@ -91,7 +91,7 @@ class simulation_creator_Balancing:
         #Battery
         if battery_active == 1:
             Battery_initialset = {'initial_soc': 20} # combine to battery set
-            Battery_set = {'max_p': 800, 'min_p': -800, 'max_energy': 800,
+            Battery_set = {'max_p': 0.8, 'min_p': -0.8, 'max_energy': 0.8,
             'charge_efficiency': 0.9, 'discharge_efficiency': 0.9,
             'soc_min': 10, 'soc_max': 90, 'flag': 0,'resolution':15}
         
