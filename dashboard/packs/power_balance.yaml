@@ -1,0 +1,323 @@
+# Tutorial 1 -- Practical Power Balancing for a Local Community.
+#
+# Mirrors examples/Tutorial1/tutorial_power_balance.ipynb. Defaults are the
+# notebook's values; slider ranges are a pedagogical choice (span either side of
+# the default) and are meant to be tuned -- see dashboard/readme.md.
+id: power_balance
+title: "Power Balancing for a Local Community"
+subtitle: "How much of a neighbourhood's demand can local wind and solar cover?"
+data_dir: examples/Tutorial1/data
+
+# Data files cover 2012. The wind series stops on 2012-12-30, so that is the last
+# day any case using it can simulate.
+day:
+  default: '2012-06-01'
+  min: '2012-01-01'
+  max: '2012-12-30'
+  presets:
+    Summer: '2012-06-01'
+    Winter: '2012-02-01'
+
+cases:
+
+  # --- Task 1: the neighbourhood's demand on its own (no simulation) ----------
+  - id: base
+    title: "Base case: demand only"
+    description: >
+      The neighbourhood's electricity demand for one day, and which sources the
+      national grid mix uses to meet it. No local generation yet.
+    kind: dataset
+    baseline:
+      file: load_data.txt
+      value_column: load
+      # 15-minute data read as power: load * houses * 15/60 (as in functions_T1).
+      scale: power
+      unit: kW
+      label: "Total load"
+      # NL electricity mix, stacked under the load curve (source: IEA).
+      mix:
+        coal: 0.1431
+        Oil: 0.0126
+        Nuclear: 0.0342
+        Biofuels: 0.0612
+        Waste: 0.0346
+        Hydro: 0.0004
+        Natural Gas: 0.3934
+        Solar: 0.1384
+        Wind: 0.1778
+        Other: 0.0043
+    controls:
+      - id: houses
+        label: "Houses in the neighbourhood"
+        type: slider
+        min: 1
+        max: 50
+        step: 1
+        default: 5
+        targets: []      # dataset case: scales the profile, no scenario to edit
+
+  # --- Task 2: add local renewables ------------------------------------------
+  - id: res
+    title: "With local renewables"
+    description: >
+      Add rooftop solar and a wind turbine. The residual load is what is left
+      for the grid to supply once local generation is subtracted.
+    kind: simulation
+    scenario: examples/Tutorial1/Tutorial_Power_Balance_a.yaml
+    csv_overrides:
+      CSVload: load_data.txt
+      CSV_pv: pv_data_Rotterdam_NL-15min.txt
+      CSV_wind: winddata_NL.txt
+    controls:
+      - id: houses
+        label: "Houses in the neighbourhood"
+        type: slider
+        min: 1
+        max: 50
+        step: 1
+        default: 5
+        targets:
+          - {model: Load1, param: houses}
+      - id: pv_cap
+        label: "Installed solar capacity"
+        unit: W
+        type: slider
+        min: 0
+        max: 5000
+        step: 100
+        default: 500
+        targets:
+          - {model: PV1, param: cap}
+      - id: wind_rated
+        label: "Wind turbine rated power"
+        unit: kW
+        type: slider
+        min: 0
+        max: 5
+        step: 0.1
+        default: 0.3
+        targets:
+          - {model: Wind1, param: p_rated}
+    monitor_items:
+      - Controller1.res_load
+      - Controller1.dump
+      - PV1.pv_gen
+      - Wind1.wind_gen
+      - Load1.load_dem
+    charts:
+      - id: power_balance
+        title: "Power balance over the day"
+        kind: line
+        y_label: "Power (kW)"
+        series:
+          - {col: Load1.load_dem, label: "Load demand"}
+          - {col: Controller1.res_load, label: "Residual load"}
+          - {col: PV1.pv_gen, label: "Solar generation"}
+          - {col: Wind1.wind_gen, label: "Wind generation"}
+    summary:
+      sum_columns:
+        Load1.load_dem: "Load demand (kW)"
+        PV1.pv_gen: "PV generation (kW)"
+        Wind1.wind_gen: "Wind generation (kW)"
+        Controller1.res_load: "Residual load (kW)"
+        Controller1.dump: "Power to grid (kW)"
+      sample_columns: {}
+    topology:
+      hidden: [CSVload, CSV_pv, CSV_wind]
+      positions:
+        PV1: [100, 90]
+        Wind1: [100, 250]
+        Controller1: [340, 170]
+        Load1: [580, 170]
+      # The national grid closes the power balance but is not a model in the
+      # scenario: the controller reports the exchange on Controller1.dump.
+      extra_nodes:
+        - {id: Grid, type: GridConnection, label: "National grid", position: [340, -30]}
+      badges:
+        - {node: Load1, col: Load1.load_dem, fmt: "{:.2f} kW"}
+        - {node: PV1, col: PV1.pv_gen, fmt: "{:.2f} kW"}
+        - {node: Wind1, col: Wind1.wind_gen, fmt: "{:.2f} kW"}
+        # Signed in the data (+ exported, - imported); the arrow shows which
+        # way, so the badge prints the size of the exchange.
+        - {node: Grid, col: Controller1.dump, fmt: "{:.2f} kW", abs: true}
+      flows:
+        - {from: PV1, to: Controller1, col: PV1.pv_gen}
+        - {from: Wind1, to: Controller1, col: Wind1.wind_gen}
+        # load_dem is positive on a Load -> Controller edge, but the power runs
+        # the other way; sign -1 points the animation at the homes.
+        - {from: Load1, to: Controller1, col: Load1.load_dem, sign: -1}
+        - {from: Controller1, to: Grid, col: Controller1.dump}
+
+  # --- Task 3: add a communal battery ----------------------------------------
+  - id: res_battery
+    title: "With renewables and a battery"
+    description: >
+      A communal battery stores surplus local generation instead of exporting
+      it, and discharges when demand exceeds generation.
+    kind: simulation
+    scenario: examples/Tutorial1/Tutorial_Power_Balance_b.yaml
+    csv_overrides:
+      CSVload: load_data.txt
+      CSV_pv: pv_data_Rotterdam_NL-15min.txt
+      CSV_wind: winddata_NL.txt
+    controls:
+      - id: houses
+        label: "Houses in the neighbourhood"
+        type: slider
+        min: 1
+        max: 50
+        step: 1
+        default: 5
+        targets:
+          - {model: Load1, param: houses}
+      - id: pv_cap
+        label: "Installed solar capacity"
+        unit: W
+        type: slider
+        min: 0
+        max: 5000
+        step: 100
+        default: 500
+        targets:
+          - {model: PV1, param: cap}
+      - id: wind_rated
+        label: "Wind turbine rated power"
+        unit: kW
+        type: slider
+        min: 0
+        max: 5
+        step: 0.1
+        default: 0.3
+        targets:
+          - {model: Wind1, param: p_rated}
+      - id: battery_energy
+        label: "Battery capacity"
+        unit: kWh
+        type: slider
+        min: 0.2
+        max: 10
+        step: 0.2
+        default: 0.8
+        targets:
+          - {model: Battery1, param: max_energy}
+      # One control drives the symmetric charge/discharge limits and the
+      # controller's matching limit, so they can never drift apart.
+      - id: battery_power
+        label: "Battery power limit"
+        unit: kW
+        type: slider
+        min: 0.1
+        max: 5
+        step: 0.1
+        default: 0.8
+        targets:
+          - {model: Battery1, param: max_p}
+          - {model: Battery1, param: min_p, scale: -1}
+          - {model: Controller1, param: max_p}
+      - id: soc_min
+        label: "Minimum state of charge"
+        unit: "%"
+        type: slider
+        min: 0
+        max: 50
+        step: 1
+        default: 10
+        targets:
+          - {model: Battery1, param: soc_min}
+          - {model: Controller1, param: soc_min}
+      - id: soc_max
+        label: "Maximum state of charge"
+        unit: "%"
+        type: slider
+        min: 50
+        max: 100
+        step: 1
+        default: 90
+        targets:
+          - {model: Battery1, param: soc_max}
+          - {model: Controller1, param: soc_max}
+    states:
+      - id: soc_start
+        label: "Battery charge at start of day"
+        unit: "%"
+        type: slider
+        min: 0
+        max: 100
+        step: 5
+        default: 90
+        model: Battery1
+        state: soc
+    monitor_items:
+      - Controller1.flow2b
+      - Controller1.res_load
+      - Controller1.dump
+      - Battery1.p_out
+      - Battery1.soc
+      - PV1.pv_gen
+      - Wind1.wind_gen
+      - Load1.load_dem
+    charts:
+      - id: power_balance
+        title: "Power balance over the day"
+        kind: line
+        y_label: "Power (kW)"
+        series:
+          - {col: Load1.load_dem, label: "Load demand"}
+          - {col: Controller1.res_load, label: "Residual load"}
+          - {col: Controller1.dump, label: "Power from grid", sign: -1}
+          - {col: PV1.pv_gen, label: "Solar generation"}
+          - {col: Wind1.wind_gen, label: "Wind generation"}
+      - id: battery_soc
+        title: "Battery state of charge"
+        kind: line
+        y_label: "State of charge (%)"
+        y_min: 0
+        y_max: 100
+        limits_from: {min: soc_min, max: soc_max}
+        series:
+          - {col: Battery1.soc, label: "State of charge"}
+    summary:
+      sum_columns:
+        Load1.load_dem: "Load demand (kW)"
+        PV1.pv_gen: "PV generation (kW)"
+        Wind1.wind_gen: "Wind generation (kW)"
+        Controller1.res_load: "Residual load (kW)"
+        Controller1.flow2b: "Power to battery (kW)"
+        # What the battery actually moved, after its limits: + charging,
+        # - delivering. Named here so the table, the day totals and the asset
+        # panel all call it the same thing.
+        Battery1.p_out: "Battery power (kW)"
+        Controller1.dump: "Power to grid (kW)"
+      # Sampled, not summed: a state at the end of each hour.
+      sample_columns:
+        Battery1.soc: "Battery SOC (%)"
+    topology:
+      hidden: [CSVload, CSV_pv, CSV_wind]
+      positions:
+        PV1: [100, 90]
+        Wind1: [100, 250]
+        Controller1: [340, 170]
+        Load1: [580, 170]
+        Battery1: [340, 370]
+      extra_nodes:
+        - {id: Grid, type: GridConnection, label: "National grid", position: [340, -30]}
+      badges:
+        - {node: Load1, col: Load1.load_dem, fmt: "{:.2f} kW"}
+        - {node: PV1, col: PV1.pv_gen, fmt: "{:.2f} kW"}
+        - {node: Wind1, col: Wind1.wind_gen, fmt: "{:.2f} kW"}
+        # `bar` also draws the value as the fill of the battery's charge bar.
+        - {node: Battery1, col: Battery1.soc, fmt: "{:.0f}%", bar: true}
+        # p_out is the power the battery actually moved (+ charging,
+        # - delivering); the arrow carries the direction, the badge the size.
+        - {node: Battery1, col: Battery1.p_out, fmt: "{:.2f} kW", abs: true}
+        - {node: Grid, col: Controller1.dump, fmt: "{:.2f} kW", abs: true}
+      flows:
+        - {from: PV1, to: Controller1, col: PV1.pv_gen}
+        - {from: Wind1, to: Controller1, col: Wind1.wind_gen}
+        # load_dem is positive on a Load -> Controller edge, but the power runs
+        # the other way; sign -1 points the animation at the homes.
+        - {from: Load1, to: Controller1, col: Load1.load_dem, sign: -1}
+        # p_out, not the controller's flow2b request: this is the power the
+        # battery managed once its capacity and efficiency were applied.
+        - {from: Controller1, to: Battery1, col: Battery1.p_out}
+        - {from: Controller1, to: Grid, col: Controller1.dump}

@@ -1,0 +1,5 @@
+# Dashboard-only dependencies.
+# Everything else (illuminator, pandas, ruamel.yaml) comes from the Illuminator
+# environment itself -- see ../readme.md and dashboard/readme.md.
+fastapi>=0.110
+uvicorn>=0.27

@@ -1,0 +1,38 @@
+{
+  "id": "20260911-213951-power_balance-res_battery",
+  "ranges": {
+    "Controller1.res_load": {
+      "min": 0.013229223284827063,
+      "max": 4.965172638614733
+    },
+    "Controller1.dump": {
+      "min": -4.965164638614732,
+      "max": -0.013221223284827067
+    },
+    "Controller1.flow2b": {
+      "min": -0.6400000000000001,
+      "max": -7.999999999995566e-06
+    },
+    "Battery1.soc": {
+      "min": 10.001,
+      "max": 90.0
+    },
+    "Battery1.p_out": {
+      "min": -0.6400000000000001,
+      "max": 0.0
+    },
+    "PV1.pv_gen": {
+      "min": 0.0,
+      "max": 0.317
+    },
+    "Wind1.wind_gen": {
+      "min": 0.017936531385266633,
+      "max": 0.4060813691546903
+    },
+    "Load1.load_dem": {
+      "min": 0.292022285,
+      "max": 5.00010917
+    }
+  },
+  "_captured_via": "asgi"
+}

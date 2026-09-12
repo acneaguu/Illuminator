@@ -1,0 +1,139 @@
+{
+  "pack": "power_balance",
+  "case": "res",
+  "kind": "simulation",
+  "nodes": [
+    {
+      "id": "Load1",
+      "type": "Load",
+      "category": "load",
+      "label": "Load1",
+      "position": [
+        580,
+        170
+      ]
+    },
+    {
+      "id": "PV1",
+      "type": "PV",
+      "category": "pv",
+      "label": "PV1",
+      "position": [
+        100,
+        90
+      ]
+    },
+    {
+      "id": "Wind1",
+      "type": "Wind",
+      "category": "wind",
+      "label": "Wind1",
+      "position": [
+        100,
+        250
+      ]
+    },
+    {
+      "id": "Controller1",
+      "type": "Controller_T1",
+      "category": "controller",
+      "label": "Controller1",
+      "position": [
+        340,
+        170
+      ]
+    },
+    {
+      "id": "Grid",
+      "type": "GridConnection",
+      "category": "grid",
+      "label": "National grid",
+      "position": [
+        340,
+        -30
+      ],
+      "virtual": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "Wind1",
+      "to": "Controller1",
+      "attrs": [
+        {
+          "from": "wind_gen",
+          "to": "wind_gen"
+        }
+      ],
+      "time_shifted": false,
+      "column": "Wind1.wind_gen",
+      "sign": 1.0
+    },
+    {
+      "from": "PV1",
+      "to": "Controller1",
+      "attrs": [
+        {
+          "from": "pv_gen",
+          "to": "pv_gen"
+        }
+      ],
+      "time_shifted": false,
+      "column": "PV1.pv_gen",
+      "sign": 1.0
+    },
+    {
+      "from": "Load1",
+      "to": "Controller1",
+      "attrs": [
+        {
+          "from": "load_dem",
+          "to": "load_dem"
+        }
+      ],
+      "time_shifted": false,
+      "column": "Load1.load_dem",
+      "sign": -1.0
+    },
+    {
+      "from": "Controller1",
+      "to": "Grid",
+      "attrs": [],
+      "time_shifted": false,
+      "virtual": true,
+      "column": "Controller1.dump",
+      "sign": 1.0
+    }
+  ],
+  "badges": [
+    {
+      "node": "Load1",
+      "col": "Load1.load_dem",
+      "fmt": "{:.2f} kW"
+    },
+    {
+      "node": "PV1",
+      "col": "PV1.pv_gen",
+      "fmt": "{:.2f} kW"
+    },
+    {
+      "node": "Wind1",
+      "col": "Wind1.wind_gen",
+      "fmt": "{:.2f} kW"
+    },
+    {
+      "node": "Grid",
+      "col": "Controller1.dump",
+      "fmt": "{:.2f} kW",
+      "abs": true
+    }
+  ],
+  "monitor_items": [
+    "Controller1.res_load",
+    "Controller1.dump",
+    "PV1.pv_gen",
+    "Wind1.wind_gen",
+    "Load1.load_dem"
+  ],
+  "_captured_via": "asgi"
+}

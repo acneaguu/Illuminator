@@ -1,0 +1,10 @@
+{
+  "status": "ok",
+  "packs": [
+    "power_balance"
+  ],
+  "pack_problems": [],
+  "repo_root": "/Users/alexneagu/PycharmProjects/Illuminator-demo-dashboard",
+  "max_concurrent": 1,
+  "_captured_via": "asgi"
+}

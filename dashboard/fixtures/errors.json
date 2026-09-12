@@ -1,0 +1,24 @@
+{
+  "unknown_pack_404": {
+    "_status": 404,
+    "detail": "no such pack: nope"
+  },
+  "unknown_run_404": {
+    "_status": 404,
+    "detail": "no such run: nope"
+  },
+  "bad_day_400": {
+    "_status": 400,
+    "detail": "day 2011-01-01 is before the data available for this case (2012-01-01 .. 2012-12-30)"
+  },
+  "dataset_case_400": {
+    "_status": 400,
+    "detail": "case 'power_balance/base' is a dataset view, not a simulation; use the baseline endpoint"
+  },
+  "conflict_409": {
+    "_status": 409,
+    "detail": "a simulation is already running (20260911-213952-power_balance-res); cancel it or wait for it to finish"
+  },
+  "_captured_via": "asgi",
+  "_note": "error response shapes; _status is the HTTP code"
+}

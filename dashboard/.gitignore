@@ -1,0 +1,3 @@
+# Simulation run artifacts (spec/status/out.csv/run.log per run).
+runs/
+__pycache__/

@@ -1,0 +1,40 @@
+{
+  "id": "20260911-213951-power_balance-res_battery",
+  "pack": "power_balance",
+  "case": "res_battery",
+  "title": "Power Balancing for a Local Community - With renewables and a battery",
+  "day": "2012-06-01",
+  "state": "done",
+  "progress": 1.0,
+  "rows": 95,
+  "expected_steps": 95,
+  "created_at": "2026-09-11T21:39:51",
+  "started_at": "2026-09-11T21:39:51",
+  "finished_at": "2026-09-11T21:39:52",
+  "error": null,
+  "exit_code": null,
+  "settings": {
+    "houses": 5,
+    "pv_cap": 500,
+    "wind_rated": 0.3,
+    "battery_energy": 0.8,
+    "battery_power": 0.8,
+    "soc_min": 10,
+    "soc_max": 90
+  },
+  "state_values": {
+    "soc_start": 90.0
+  },
+  "monitor_items": [
+    "Controller1.flow2b",
+    "Controller1.res_load",
+    "Controller1.dump",
+    "Battery1.p_out",
+    "Battery1.soc",
+    "PV1.pv_gen",
+    "Wind1.wind_gen",
+    "Load1.load_dem"
+  ],
+  "notes": [],
+  "_captured_via": "asgi"
+}

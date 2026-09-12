@@ -1,0 +1,890 @@
+{
+  "runs": [
+    {
+      "id": "20260911-213951-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:39:51",
+      "started_at": "2026-09-11T21:39:51",
+      "finished_at": "2026-09-11T21:39:52",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-213847-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "cancelled",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:38:47",
+      "started_at": "2026-09-11T21:38:47",
+      "finished_at": "2026-09-11T21:38:48",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-213714-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:37:14",
+      "started_at": "2026-09-11T21:37:14",
+      "finished_at": "2026-09-11T21:37:15",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-211504-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:15:05",
+      "started_at": "2026-09-11T21:15:05",
+      "finished_at": "2026-09-11T21:15:05",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 2200.0,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-211439-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:14:40",
+      "started_at": "2026-09-11T21:14:40",
+      "finished_at": "2026-09-11T21:14:41",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-211421-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T21:14:21",
+      "started_at": "2026-09-11T21:14:21",
+      "finished_at": "2026-09-11T21:14:22",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-182753-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "cancelled",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:27:53",
+      "started_at": "2026-09-11T18:27:53",
+      "finished_at": "2026-09-11T18:27:55",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-182003-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:20:03",
+      "started_at": "2026-09-11T18:20:03",
+      "finished_at": "2026-09-11T18:20:04",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 1800.0,
+        "wind_rated": 0.3,
+        "battery_energy": 4.2,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181955-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:55",
+      "started_at": "2026-09-11T18:19:55",
+      "finished_at": "2026-09-11T18:19:56",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 3100.0,
+        "wind_rated": 0.3,
+        "battery_energy": 4.2,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181939-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:39",
+      "started_at": "2026-09-11T18:19:39",
+      "finished_at": "2026-09-11T18:19:40",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3,
+        "battery_energy": 4.2,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181935-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:35",
+      "started_at": "2026-09-11T18:19:35",
+      "finished_at": "2026-09-11T18:19:36",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181918-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:19",
+      "started_at": "2026-09-11T18:19:19",
+      "finished_at": "2026-09-11T18:19:19",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 39.0,
+        "pv_cap": 1500.0,
+        "wind_rated": 1.2
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181913-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:14",
+      "started_at": "2026-09-11T18:19:14",
+      "finished_at": "2026-09-11T18:19:14",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 15.0,
+        "pv_cap": 1500.0,
+        "wind_rated": 1.2
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181909-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:09",
+      "started_at": "2026-09-11T18:19:09",
+      "finished_at": "2026-09-11T18:19:10",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 15.0,
+        "pv_cap": 3200.0,
+        "wind_rated": 1.2
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181903-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:19:03",
+      "started_at": "2026-09-11T18:19:03",
+      "finished_at": "2026-09-11T18:19:04",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 15.0,
+        "pv_cap": 3200.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181857-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:18:58",
+      "started_at": "2026-09-11T18:18:58",
+      "finished_at": "2026-09-11T18:18:59",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-181530-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "cancelled",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:15:30",
+      "started_at": "2026-09-11T18:15:30",
+      "finished_at": "2026-09-11T18:15:32",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-180225-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-01",
+      "state": "cancelled",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T18:02:25",
+      "started_at": "2026-09-11T18:02:25",
+      "finished_at": "2026-09-11T18:02:27",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5,
+        "pv_cap": 500,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10,
+        "soc_max": 90
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175912-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:59:13",
+      "started_at": "2026-09-11T17:59:13",
+      "finished_at": "2026-09-11T17:59:14",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 1600.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175854-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-18",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:58:54",
+      "started_at": "2026-09-11T17:58:54",
+      "finished_at": "2026-09-11T17:58:55",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 900.0,
+        "wind_rated": 0.3,
+        "battery_energy": 3.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175826-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-18",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:58:26",
+      "started_at": "2026-09-11T17:58:26",
+      "finished_at": "2026-09-11T17:58:27",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3,
+        "battery_energy": 3.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175820-power_balance-res_battery",
+      "pack": "power_balance",
+      "case": "res_battery",
+      "title": "Power Balancing for a Local Community - With renewables and a battery",
+      "day": "2012-06-18",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:58:20",
+      "started_at": "2026-09-11T17:58:20",
+      "finished_at": "2026-09-11T17:58:21",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3,
+        "battery_energy": 0.8,
+        "battery_power": 0.8,
+        "soc_min": 10.0,
+        "soc_max": 90.0
+      },
+      "state_values": {
+        "soc_start": 90.0
+      },
+      "monitor_items": [
+        "Controller1.flow2b",
+        "Controller1.res_load",
+        "Controller1.dump",
+        "Battery1.p_out",
+        "Battery1.soc",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175808-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:58:08",
+      "started_at": "2026-09-11T17:58:08",
+      "finished_at": "2026-09-11T17:58:09",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 16.0,
+        "pv_cap": 3300.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175758-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:57:58",
+      "started_at": "2026-09-11T17:57:58",
+      "finished_at": "2026-09-11T17:57:59",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 16.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    },
+    {
+      "id": "20260911-175752-power_balance-res",
+      "pack": "power_balance",
+      "case": "res",
+      "title": "Power Balancing for a Local Community - With local renewables",
+      "day": "2012-06-01",
+      "state": "done",
+      "progress": 1.0,
+      "rows": 95,
+      "expected_steps": 95,
+      "created_at": "2026-09-11T17:57:52",
+      "started_at": "2026-09-11T17:57:52",
+      "finished_at": "2026-09-11T17:57:53",
+      "error": null,
+      "exit_code": null,
+      "settings": {
+        "houses": 5.0,
+        "pv_cap": 500.0,
+        "wind_rated": 0.3
+      },
+      "state_values": {},
+      "monitor_items": [
+        "Controller1.res_load",
+        "Controller1.dump",
+        "PV1.pv_gen",
+        "Wind1.wind_gen",
+        "Load1.load_dem"
+      ],
+      "notes": []
+    }
+  ],
+  "_captured_via": "asgi"
+}

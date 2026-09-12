@@ -1,0 +1,430 @@
+{
+  "packs": [
+    {
+      "id": "power_balance",
+      "title": "Power Balancing for a Local Community",
+      "subtitle": "How much of a neighbourhood's demand can local wind and solar cover?",
+      "cases": [
+        {
+          "id": "base",
+          "title": "Base case: demand only",
+          "description": "The neighbourhood's electricity demand for one day, and which sources the national grid mix uses to meet it. No local generation yet.",
+          "kind": "dataset",
+          "scenario": null,
+          "day": {
+            "default": "2012-06-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Summer": "2012-06-01",
+              "Winter": "2012-02-01"
+            }
+          },
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 50,
+              "step": 1,
+              "default": 5,
+              "targets": []
+            }
+          ],
+          "states": [],
+          "charts": [],
+          "monitor_items": [],
+          "summary": {},
+          "defaults": {
+            "day": "2012-06-01",
+            "settings": {
+              "houses": 5
+            },
+            "states": {}
+          }
+        },
+        {
+          "id": "res",
+          "title": "With local renewables",
+          "description": "Add rooftop solar and a wind turbine. The residual load is what is left for the grid to supply once local generation is subtracted.",
+          "kind": "simulation",
+          "scenario": "examples/Tutorial1/Tutorial_Power_Balance_a.yaml",
+          "day": {
+            "default": "2012-06-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Summer": "2012-06-01",
+              "Winter": "2012-02-01"
+            }
+          },
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 50,
+              "step": 1,
+              "default": 5,
+              "targets": [
+                {
+                  "model": "Load1",
+                  "param": "houses",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "pv_cap",
+              "label": "Installed solar capacity",
+              "unit": "W",
+              "type": "slider",
+              "min": 0,
+              "max": 5000,
+              "step": 100,
+              "default": 500,
+              "targets": [
+                {
+                  "model": "PV1",
+                  "param": "cap",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "wind_rated",
+              "label": "Wind turbine rated power",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0,
+              "max": 5,
+              "step": 0.1,
+              "default": 0.3,
+              "targets": [
+                {
+                  "model": "Wind1",
+                  "param": "p_rated",
+                  "scale": 1.0
+                }
+              ]
+            }
+          ],
+          "states": [],
+          "charts": [
+            {
+              "id": "power_balance",
+              "title": "Power balance over the day",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "series": [
+                {
+                  "col": "Load1.load_dem",
+                  "label": "Load demand"
+                },
+                {
+                  "col": "Controller1.res_load",
+                  "label": "Residual load"
+                },
+                {
+                  "col": "PV1.pv_gen",
+                  "label": "Solar generation"
+                },
+                {
+                  "col": "Wind1.wind_gen",
+                  "label": "Wind generation"
+                }
+              ]
+            }
+          ],
+          "monitor_items": [
+            "Controller1.res_load",
+            "Controller1.dump",
+            "PV1.pv_gen",
+            "Wind1.wind_gen",
+            "Load1.load_dem"
+          ],
+          "summary": {
+            "sum_columns": {
+              "Load1.load_dem": "Load demand (kW)",
+              "PV1.pv_gen": "PV generation (kW)",
+              "Wind1.wind_gen": "Wind generation (kW)",
+              "Controller1.res_load": "Residual load (kW)",
+              "Controller1.dump": "Power to grid (kW)"
+            },
+            "sample_columns": {}
+          },
+          "defaults": {
+            "day": "2012-06-01",
+            "settings": {
+              "houses": 5,
+              "pv_cap": 500,
+              "wind_rated": 0.3
+            },
+            "states": {}
+          }
+        },
+        {
+          "id": "res_battery",
+          "title": "With renewables and a battery",
+          "description": "A communal battery stores surplus local generation instead of exporting it, and discharges when demand exceeds generation.",
+          "kind": "simulation",
+          "scenario": "examples/Tutorial1/Tutorial_Power_Balance_b.yaml",
+          "day": {
+            "default": "2012-06-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Summer": "2012-06-01",
+              "Winter": "2012-02-01"
+            }
+          },
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 50,
+              "step": 1,
+              "default": 5,
+              "targets": [
+                {
+                  "model": "Load1",
+                  "param": "houses",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "pv_cap",
+              "label": "Installed solar capacity",
+              "unit": "W",
+              "type": "slider",
+              "min": 0,
+              "max": 5000,
+              "step": 100,
+              "default": 500,
+              "targets": [
+                {
+                  "model": "PV1",
+                  "param": "cap",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "wind_rated",
+              "label": "Wind turbine rated power",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0,
+              "max": 5,
+              "step": 0.1,
+              "default": 0.3,
+              "targets": [
+                {
+                  "model": "Wind1",
+                  "param": "p_rated",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_energy",
+              "label": "Battery capacity",
+              "unit": "kWh",
+              "type": "slider",
+              "min": 0.2,
+              "max": 10,
+              "step": 0.2,
+              "default": 0.8,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_energy",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_power",
+              "label": "Battery power limit",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0.1,
+              "max": 5,
+              "step": 0.1,
+              "default": 0.8,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_p",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Battery1",
+                  "param": "min_p",
+                  "scale": -1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "max_p",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_min",
+              "label": "Minimum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 50,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_max",
+              "label": "Maximum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 50,
+              "max": 100,
+              "step": 1,
+              "default": 90,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                }
+              ]
+            }
+          ],
+          "states": [
+            {
+              "id": "soc_start",
+              "label": "Battery charge at start of day",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 100,
+              "step": 5,
+              "default": 90,
+              "model": "Battery1",
+              "state": "soc"
+            }
+          ],
+          "charts": [
+            {
+              "id": "power_balance",
+              "title": "Power balance over the day",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "series": [
+                {
+                  "col": "Load1.load_dem",
+                  "label": "Load demand"
+                },
+                {
+                  "col": "Controller1.res_load",
+                  "label": "Residual load"
+                },
+                {
+                  "col": "Controller1.dump",
+                  "label": "Power from grid",
+                  "sign": -1
+                },
+                {
+                  "col": "PV1.pv_gen",
+                  "label": "Solar generation"
+                },
+                {
+                  "col": "Wind1.wind_gen",
+                  "label": "Wind generation"
+                }
+              ]
+            },
+            {
+              "id": "battery_soc",
+              "title": "Battery state of charge",
+              "kind": "line",
+              "y_label": "State of charge (%)",
+              "y_min": 0,
+              "y_max": 100,
+              "limits_from": {
+                "min": "soc_min",
+                "max": "soc_max"
+              },
+              "series": [
+                {
+                  "col": "Battery1.soc",
+                  "label": "State of charge"
+                }
+              ]
+            }
+          ],
+          "monitor_items": [
+            "Controller1.flow2b",
+            "Controller1.res_load",
+            "Controller1.dump",
+            "Battery1.p_out",
+            "Battery1.soc",
+            "PV1.pv_gen",
+            "Wind1.wind_gen",
+            "Load1.load_dem"
+          ],
+          "summary": {
+            "sum_columns": {
+              "Load1.load_dem": "Load demand (kW)",
+              "PV1.pv_gen": "PV generation (kW)",
+              "Wind1.wind_gen": "Wind generation (kW)",
+              "Controller1.res_load": "Residual load (kW)",
+              "Controller1.flow2b": "Power to battery (kW)",
+              "Battery1.p_out": "Battery power (kW)",
+              "Controller1.dump": "Power to grid (kW)"
+            },
+            "sample_columns": {
+              "Battery1.soc": "Battery SOC (%)"
+            }
+          },
+          "defaults": {
+            "day": "2012-06-01",
+            "settings": {
+              "houses": 5,
+              "pv_cap": 500,
+              "wind_rated": 0.3,
+              "battery_energy": 0.8,
+              "battery_power": 0.8,
+              "soc_min": 10,
+              "soc_max": 90
+            },
+            "states": {
+              "soc_start": 90
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "_captured_via": "asgi"
+}

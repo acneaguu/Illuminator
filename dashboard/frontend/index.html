@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Illuminator Dashboard</title>
+<link rel="stylesheet" href="vendor/uplot.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <h1 id="pack-title">Illuminator</h1>
+    <p id="pack-subtitle">Loading…</p>
+  </div>
+  <div class="topbar-right">
+    <span id="mock-badge" class="badge hidden">demo data</span>
+    <span id="status-pill" class="pill pill-idle">Ready</span>
+  </div>
+</header>
+
+<nav id="case-tabs" class="tabs" aria-label="Tasks"></nav>
+
+<main class="layout">
+
+  <aside class="panel controls-panel" aria-label="Settings">
+    <p id="case-description" class="case-description"></p>
+
+    <section id="day-section" class="control-section">
+      <h2>Day</h2>
+      <div id="day-presets" class="preset-row"></div>
+      <input type="date" id="day-input" class="day-input">
+    </section>
+
+    <section class="control-section">
+      <h2 id="controls-heading">Settings</h2>
+      <div id="controls"></div>
+    </section>
+
+    <div id="notes" class="notes" role="status"></div>
+
+    <div class="actions">
+      <button id="run-btn" class="btn btn-primary" type="button">Simulate</button>
+      <button id="cancel-btn" class="btn btn-danger hidden" type="button">Stop</button>
+      <button id="reset-btn" class="btn btn-ghost" type="button">Reset</button>
+    </div>
+
+    <div id="progress" class="progress hidden">
+      <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+      <span class="progress-label" id="progress-label"></span>
+    </div>
+  </aside>
+
+  <section class="panel results-panel" aria-label="Results">
+    <div id="error-panel" class="error-panel hidden"></div>
+
+    <!-- The system diagram: present before a run, animated during one. -->
+    <div id="topology-slot"></div>
+
+    <div id="pinbar" class="pinbar hidden"></div>
+
+    <div id="placeholder" class="placeholder">
+      <p>Choose your settings, then press <strong>Simulate</strong>.</p>
+    </div>
+
+    <div id="charts" class="charts"></div>
+    <div id="comparison" class="comparison"></div>
+    <div id="summary" class="summary"></div>
+  </section>
+
+</main>
+
+<script src="vendor/uplot.iife.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

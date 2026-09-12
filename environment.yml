@@ -17,4 +17,4 @@ dependencies:
     - mpi4py
     - pytest
     - illuminator>=3.0.0-alpha
-    # - mosaik-api==3.0.3 # If mosaik != 3.1.1 then - mosaik-api==3.0.3 is needed
+    # - mosaik-api==3.0.3 # If mosaik != 3.1.1 then - mosaik-api==3.0.3 is neededpi
