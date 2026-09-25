@@ -81,6 +81,32 @@ body {
   color: #fff;
 }
 
+/* Tutorial switcher: one button per pack, shown only when there are several. */
+.pack-switch {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pack-switch::-webkit-scrollbar { display: none; }
+.pack-btn {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #24384a;
+  color: #cfe0ec;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pack-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.pack-btn:active { transform: translateY(1px); }
+
 /* ------------------------------------------------------------------ tabs */
 
 .tabs {
@@ -115,7 +141,8 @@ body {
 .layout {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 400px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);   /* toolbar, then the results */
   gap: 16px;
   padding: 16px;
   min-height: 0;
@@ -132,20 +159,48 @@ body {
 }
 
 .case-description {
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   color: var(--ink-soft);
   font-size: 15px;
 }
 
-.control-section { margin-bottom: 22px; }
-.control-section h2 {
-  margin: 0 0 12px;
+/* ---------------------------------------------------------------- toolbar */
+
+/* Day, whatever settings the diagram does not own, and the run buttons, on
+   one line above the results. The toolbar sizes to its content and never
+   scrolls -- only the results panel below it does. */
+.toolbar { overflow: visible; padding: 14px 18px; }
+
+.toolbar-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px 28px;
+  flex-wrap: wrap;
+}
+.toolbar-group { min-width: 0; }
+.toolbar-grow { flex: 1 1 260px; }
+.toolbar-group > h2 {
+  margin: 0 0 8px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
+
+.toolbar-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.toolbar .preset-row { margin-bottom: 0; }
+.toolbar .day-input { width: auto; }
+
+/* Settings the diagram cannot host sit inline; they keep their own width so a
+   long row of them wraps tidily rather than stretching. */
+.toolbar #controls { display: flex; gap: 10px 26px; flex-wrap: wrap; }
+.toolbar .control { width: 224px; margin-bottom: 0; }
+.toolbar .controls-hint { margin: 0; max-width: 52ch; }
+
+.toolbar .actions { margin: 0 0 0 auto; }
+.toolbar .progress { margin-top: 12px; }
+.toolbar .notes:empty { display: none; }
 
 /* -------------------------------------------------------------- controls */
 
@@ -258,6 +313,7 @@ input[type="range"]:disabled::-moz-range-thumb { background: var(--ink-faint); }
 /* --------------------------------------------------------------- actions */
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 0; }
+.toolbar .btn { flex: 0 0 auto; }
 
 .btn {
   min-height: var(--tap);
@@ -275,6 +331,33 @@ input[type="range"]:disabled::-moz-range-thumb { background: var(--ink-faint); }
 .btn-danger:not(:disabled):active { background: var(--danger-press); }
 .btn-ghost { background: #eef2f5; color: var(--ink); flex: 0 0 auto; }
 .btn-ghost:not(:disabled):active { background: #e0e6eb; }
+
+/* Playback options: a small popover off the Options button, next to Reset. */
+.options-menu { position: relative; flex: 0 0 auto; }
+.options-pop {
+  position: absolute;
+  z-index: 6;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 240px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.options-label {
+  display: block;
+  font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.options-readout {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
 
 /* -------------------------------------------------------------- progress */
 
@@ -394,6 +477,7 @@ td { font-variant-numeric: tabular-nums; border-bottom: 1px solid #eef2f5; }
 /* -------------------------------------------------------------- topology */
 
 .topo-card {
+  position: relative;        /* anchors the asset popover */
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
@@ -410,6 +494,7 @@ td { font-variant-numeric: tabular-nums; border-bottom: 1px solid #eef2f5; }
 }
 .topo-edge-flow {
   fill: none;
+  /* With a near-zero dash length, a round cap renders each dash as a dot. */
   stroke-linecap: round;
   transition: stroke-opacity .2s ease;
 }
@@ -479,55 +564,132 @@ td { font-variant-numeric: tabular-nums; border-bottom: 1px solid #eef2f5; }
   color: var(--ink-faint);
 }
 
-/* Asset panel: what one node is set to, and what it is doing right now. */
-.topo-detail {
-  margin-top: 10px;
+/* Asset popover: what one node is set to, and what it is doing right now.
+   Floats over the diagram beside the asset it belongs to, so the link between
+   the two stays obvious however large the network grows. */
+.topo-pop {
+  position: absolute;
+  z-index: 5;
+  width: 264px;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #f8fafb;
+  background: var(--panel);
+  box-shadow: var(--shadow);
 }
-.topo-detail-head { display: flex; align-items: baseline; gap: 10px; }
-.topo-detail-head strong { font-size: 15px; }
-.topo-detail-type { font-size: 12px; color: var(--ink-faint); }
-.topo-detail-close {
+
+/* A small pointer aimed back at the chip; `data-side` says which edge it is on. */
+.topo-pop-arrow {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  transform: rotate(45deg);
+  margin-top: -5px;
+}
+.topo-pop[data-side="right"] .topo-pop-arrow { left: -6px; border-right: 0; border-top: 0; }
+.topo-pop[data-side="left"]  .topo-pop-arrow { right: -6px; border-left: 0; border-bottom: 0; }
+.topo-pop[data-side="below"] .topo-pop-arrow {
+  top: -6px; margin-top: 0; margin-left: -5px; border-right: 0; border-bottom: 0;
+}
+.topo-pop[data-side="none"] .topo-pop-arrow { display: none; }
+
+.topo-pop-head { display: flex; align-items: baseline; gap: 8px; }
+.topo-pop-head strong { font-size: 15px; }
+.topo-pop-type { font-size: 12px; color: var(--ink-faint); }
+.topo-pop-close {
   margin-left: auto;
-  width: 32px; height: 32px;
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
   border: 0; border-radius: 8px;
   background: transparent;
   color: var(--ink-soft);
   font-size: 20px; line-height: 1;
   cursor: pointer;
 }
-.topo-detail-close:active { background: #e6ebef; }
+.topo-pop-close:active { background: #e6ebef; }
 
-.topo-detail-cols {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 6px 28px;
-  margin-top: 6px;
-}
-.topo-detail-cols h4 {
-  margin: 6px 0 4px;
+.topo-pop-block { margin-top: 10px; }
+.topo-pop-block h4 {
+  margin: 0 0 6px;
   font-size: 11px; font-weight: 700;
   letter-spacing: .07em; text-transform: uppercase;
   color: var(--ink-faint);
 }
-.topo-detail-cols dl {
+.topo-pop-block dl {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 3px 14px;
+  gap: 3px 12px;
   margin: 0;
   font-size: 13.5px;
 }
-.topo-detail-cols dt { color: var(--ink-soft); }
-.topo-detail-cols dd {
+.topo-pop-block dt { color: var(--ink-soft); }
+.topo-pop-block dd {
   margin: 0;
   text-align: right;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.topo-detail-empty { margin: 0; font-size: 13px; color: var(--ink-faint); }
+.topo-pop-empty { margin: 0; font-size: 13px; color: var(--ink-faint); }
+.topo-pop-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--warn);
+}
+
+/* A setting inside the popover: type the number, or drag for it. */
+.pop-control { margin-bottom: 12px; }
+.pop-control:last-child { margin-bottom: 0; }
+.pop-control-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+.pop-control-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.pop-field { display: inline-flex; align-items: baseline; gap: 3px; flex: 0 0 auto; }
+.pop-field .unit { font-size: 12px; color: var(--ink-faint); }
+
+.pop-number {
+  width: 68px;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--accent);
+  font: 700 14px/1.2 inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.pop-number:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(11, 111, 184, .15);
+}
+.pop-number:disabled { color: var(--ink-faint); background: #f4f6f8; }
+
+/* Shorter than the panel's slider: the number beside it carries the reading. */
+.pop-range { height: 26px; }
+.pop-range::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -8px; border-width: 2px; }
+.pop-range::-moz-range-thumb { width: 22px; height: 22px; border-width: 2px; }
+
+.switch-sm { width: 50px; height: 28px; }
+.switch-sm .slider-track::before { width: 22px; height: 22px; left: 3px; top: 3px; }
+.switch-sm input:checked + .slider-track::before { transform: translateX(22px); }
+
+/* Panel note shown once the diagram owns the asset settings. */
+.controls-hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
 
 /* ------------------------------------------------------------ comparing */
 
@@ -614,11 +776,12 @@ td { font-variant-numeric: tabular-nums; border-bottom: 1px solid #eef2f5; }
 
 .hidden { display: none !important; }
 
-/* Narrow / portrait screens: stack the panels instead of side by side. */
+/* Narrow / portrait screens: let the page scroll as a whole. */
 @media (max-width: 1000px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-rows: auto auto; }
   .panel { overflow-y: visible; }
   body { overflow-y: auto; }
+  .toolbar .actions { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

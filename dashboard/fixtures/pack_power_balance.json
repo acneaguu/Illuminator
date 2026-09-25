@@ -18,6 +18,7 @@
           "Winter": "2012-02-01"
         }
       },
+      "controls_heading": "Neighbourhood",
       "controls": [
         {
           "id": "houses",
@@ -57,6 +58,7 @@
           "Winter": "2012-02-01"
         }
       },
+      "controls_heading": "Settings",
       "controls": [
         {
           "id": "houses",
@@ -178,6 +180,7 @@
           "Winter": "2012-02-01"
         }
       },
+      "controls_heading": "Settings",
       "controls": [
         {
           "id": "houses",

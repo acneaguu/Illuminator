@@ -91,7 +91,9 @@ manager starts each simulation subprocess with that working directory too.
 
 ## Using it
 
-Pick a task along the top, set the sliders, press **Simulate**. The diagram,
+With more than one pack installed, a switcher in the top bar picks the tutorial
+and `?pack=<id>` links straight to one; with a single pack it stays out of the
+way. Pick a task along the top, set the sliders, press **Simulate**. The diagram,
 the charts and the results table fill in as the simulation runs; **Stop**
 abandons it and **Reset** returns every setting to the tutorial's defaults. The first task of each pack is
 a *dataset view*: it has no Simulate button and redraws immediately as you change
@@ -129,6 +131,11 @@ Everything drawn comes from the scenario YAML plus the pack's `topology:` block
 (positions, hidden nodes, which result column animates which edge), so a new
 tutorial gets a diagram by writing a pack, not code — and a scenario with no
 overlay still renders with an automatic layout.
+
+Each node's icon follows from its Illuminator model type: `pv`, `wind`, `load`,
+`load_ev`, `load_hp`, `battery`, `grid`, `controller` (any type whose name starts
+with `Controller`), `data` and `generic`. A type nobody has mapped draws the
+generic glyph rather than failing.
 
 Two things the scenario cannot supply, the pack adds:
 
@@ -185,7 +192,7 @@ browser ──HTTP──> FastAPI (dashboard/backend/app.py)
 
 frontend/  (static, no build step, ES modules)
   index.html    shell
-  app.js        state machine: case selection, run lifecycle, polling
+  app.js        state machine: pack and case selection, run lifecycle, polling
   api.js        the only place that talks to the backend; also serves mock mode
   controls.js   sliders/toggles/day picker built from the pack schema
   charts.js     uPlot wrappers, the results table and the run comparison;
@@ -241,7 +248,11 @@ adding a tutorial means adding a pack, not changing code. See
 `packs/power_balance.yaml` for a worked example. A case declares:
 
 * `scenario` — the Illuminator YAML to run (`kind: simulation`), or `baseline` —
-  a data file to read directly (`kind: dataset`, no engine involved).
+  a data file to read directly (`kind: dataset`, no engine involved). A
+  `baseline` block names the control that scales the profile with `scale_by`,
+  so a dataset case's controls are the pack's choice rather than fixed names.
+* `controls_heading` — the word over the settings panel, when "Settings" is not
+  the right one (Tutorial 1's demand-only view calls it "Neighbourhood").
 * `csv_overrides` — data file per CSV model. **Always set these.** Several
   committed tutorial YAMLs point at paths that no longer exist (for example
   `Tutorial_Power_Balance_a.yaml` refers to `Tutorial1/Tutorial1/load_data.txt`),
@@ -267,8 +278,13 @@ python -m dashboard.backend.packs
 ```
 
 This validates every pack against its scenarios — control targets, state targets,
-monitor items, chart/badge/flow columns, data files and day ranges — and exits
+monitor items, chart/badge/flow columns, data files, day ranges, a dataset
+case's `scale_by`, and any icon category an `extra_node` names — and exits
 non-zero on any problem. `GET /api/health` reports the same.
+
+The category check matters because an unknown one fails *silently* otherwise:
+the diagram falls back to a generic glyph rather than erroring, so a typo would
+only ever show up as a circle nobody could explain.
 
 ### Slider ranges
 
@@ -286,9 +302,19 @@ up with the simulation clock, so resolution is deliberately not exposed.
 
 ## Tests
 
-The backend has no test suite of its own yet; `python -m dashboard.backend.packs`
-validates the packs, and `/api/health` reports the same. The frontend has
-browser-less tests in `tools/frontend_tests/` — see the README there.
+```shell
+# from the repository root
+pytest tests/dashboard -q
+```
+
+covers the pure functions everything else leans on: control normalisation and
+clamping, the step-count arithmetic that mirrors the engine's, the collector-CSV
+readers (torn last line, date-only step-0 timestamp, `since` paging) and the
+pack self-check. `python -m dashboard.backend.packs` validates the packs
+themselves, and `/api/health` reports the same.
+
+The frontend has browser-less tests in `tools/frontend_tests/` — see the README
+there.
 
 ## API
 

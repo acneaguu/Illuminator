@@ -58,6 +58,9 @@ baseline route, not `POST /api/runs`).
       "description": "A communal battery stores surplus local generation ...",
       "kind": "simulation",
       "scenario": "examples/Tutorial1/Tutorial_Power_Balance_b.yaml",
+      // Heading over the settings panel. Defaults to "Settings"; a pack may
+      // give a case its own word ("Neighbourhood" on a demand-only view).
+      "controls_heading": "Settings",
       "day": {
         "default": "2012-06-01", "min": "2012-01-01", "max": "2012-12-30",
         "presets": {"Summer": "2012-06-01", "Winter": "2012-02-01"}
@@ -162,8 +165,14 @@ drawn as a fill under the node's icon.
 
 ### `GET /api/packs/{pack}/cases/{case}/baseline` → `fixtures/baseline_base.json`
 
-Dataset cases only. Query: `day=YYYY-MM-DD`, `houses=<number>`. Answers
-immediately; no run is involved.
+Dataset cases only. Answers immediately; no run is involved.
+
+Query: `day=YYYY-MM-DD`, plus **one parameter per control, keyed by control id**
+— the same ids `POST /api/runs` takes in `settings`, so a dataset case can
+declare whatever controls it likes without an API change
+(`?day=2012-06-01&houses=5`). Unknown ids are ignored with a note and
+out-of-range values are clamped, exactly as for a run. Which control scales the
+profile is the pack's `baseline.scale_by`, not a fixed name.
 
 ```jsonc
 {
@@ -341,5 +350,8 @@ active run. Its `detail` names the run holding the slot.
 * Poll `GET /api/runs/{id}` and `GET /api/runs/{id}/results?since=N` together on
   the same tick; stop when `state` is terminal.
 * Everything needed to render a case — controls, charts, topology, summary
-  labels — comes from the pack. Add a tutorial by adding a pack file, not by
-  changing frontend code.
+  labels, the settings heading — comes from the pack. Add a tutorial by adding a
+  pack file, not by changing frontend code.
+* `/api/packs` returns **every** installed pack, not just one. The dashboard
+  shows a switcher in the top bar when there is more than one, and `?pack=<id>`
+  deep-links a particular tutorial.

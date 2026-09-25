@@ -179,3 +179,125 @@ export function syncDayPicker(presetRow, dateInput, day) {
   }
   dateInput.value = day;
 }
+
+/* ------------------------------------------------- compact (popover) form */
+
+/** Keep a typed or dragged value inside the control's declared range. */
+function clampTo(control, value) {
+  const min = Number(control.min);
+  const max = Number(control.max);
+  let next = Number(value);
+  if (!Number.isFinite(next)) return null;
+  if (Number.isFinite(min)) next = Math.max(min, next);
+  if (Number.isFinite(max)) next = Math.min(max, next);
+  return next;
+}
+
+/**
+ * One control as it appears in the diagram's asset popover: a typed number
+ * field and a slider that stay in sync, so a value can be nudged by dragging
+ * or set exactly by typing.
+ *
+ * Deliberately separate from `buildSlider` rather than a variant of it -- the
+ * popover has no room for the min/max scale and needs the readout itself to be
+ * the input.
+ *
+ * @returns {{el: HTMLElement, sync: Function, setDisabled: Function}}
+ */
+export function buildCompactControl(control, value, onInput) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pop-control';
+  wrap.dataset.control = control.id;
+
+  const head = document.createElement('div');
+  head.className = 'pop-control-head';
+
+  const label = document.createElement('label');
+  label.className = 'pop-control-label';
+  label.textContent = control.label;
+  label.htmlFor = `pop-${control.id}`;
+  head.append(label);
+
+  if (control.type === 'toggle') {
+    const shell = document.createElement('span');
+    shell.className = 'switch switch-sm';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.id = `pop-${control.id}`;
+    box.checked = Boolean(value);
+    const track = document.createElement('span');
+    track.className = 'slider-track';
+    shell.append(box, track);
+    head.append(shell);
+    wrap.append(head);
+
+    box.addEventListener('change', () => onInput(control.id, box.checked));
+    return {
+      el: wrap,
+      sync(next) { box.checked = Boolean(next); },
+      setDisabled(disabled) { box.disabled = disabled; },
+    };
+  }
+
+  const field = document.createElement('span');
+  field.className = 'pop-field';
+
+  const number = document.createElement('input');
+  number.type = 'number';
+  number.className = 'pop-number';
+  number.id = `pop-${control.id}`;
+  number.min = control.min;
+  number.max = control.max;
+  number.step = control.step;
+  number.value = formatValue(control, value);
+  field.append(number);
+
+  if (control.unit) {
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = control.unit;
+    field.append(unit);
+  }
+  head.append(field);
+
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.className = 'pop-range';
+  range.min = control.min;
+  range.max = control.max;
+  range.step = control.step;
+  range.value = value;
+  range.setAttribute('aria-label', control.label);
+
+  // Dragging drives the field; typing drives the slider. Clamping only on
+  // `change` (blur or Enter) leaves a half-typed number alone while it is
+  // still being entered.
+  range.addEventListener('input', () => {
+    const next = Number(range.value);
+    number.value = formatValue(control, next);
+    onInput(control.id, next);
+  });
+  number.addEventListener('input', () => {
+    const next = Number(number.value);
+    if (number.value === '' || !Number.isFinite(next)) return;
+    range.value = next;
+    onInput(control.id, Number(range.value));
+  });
+  number.addEventListener('change', () => {
+    const next = clampTo(control, number.value);
+    if (next === null) { number.value = formatValue(control, Number(range.value)); return; }
+    range.value = next;
+    number.value = formatValue(control, Number(range.value));
+    onInput(control.id, Number(range.value));
+  });
+
+  wrap.append(head, range);
+  return {
+    el: wrap,
+    sync(next) {
+      range.value = next;
+      number.value = formatValue(control, next);
+    },
+    setDisabled(disabled) { number.disabled = disabled; range.disabled = disabled; },
+  };
+}

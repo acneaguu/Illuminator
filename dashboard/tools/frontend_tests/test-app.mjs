@@ -84,10 +84,19 @@ check('pack title rendered', doc.getElementById('pack-title').textContent ===
 const tabs = [...doc.querySelectorAll('.tab')].map((t) => t.textContent);
 check('one tab per case', tabs.length === 3, JSON.stringify(tabs));
 check('first case selected', doc.querySelector('.tab').getAttribute('aria-selected') === 'true');
+check('a single pack keeps the tutorial switcher hidden',
+  doc.getElementById('pack-switch').classList.contains('hidden'));
 
 console.log('=== 2. dataset case (task 1) ===');
 check('dataset case hides Simulate', doc.getElementById('run-btn').classList.contains('hidden'));
 check('baseline was requested', requests.some((r) => r.key.endsWith('/baseline')));
+const baselineReq = requests.find((r) => r.key.endsWith('/baseline'));
+check('baseline query carries the control values by id',
+  baselineReq && baselineReq.search.includes('houses=5'), baselineReq && baselineReq.search);
+check('settings heading comes from the pack',
+  doc.getElementById('controls-heading').textContent ===
+    live.packs.packs[0].cases[0].controls_heading,
+  doc.getElementById('controls-heading').textContent);
 check('stacked chart drawn', doc.querySelectorAll('#charts .chart-card').length === 1);
 const legendNames = [...doc.querySelectorAll('#charts .legend-item')].map((n) => n.textContent);
 check('mix layers in legend', legendNames.length === 11, `${legendNames.length} entries`);
@@ -100,16 +109,13 @@ check('battery tab selected', batteryTab.getAttribute('aria-selected') === 'true
 check('Simulate shown for simulation case', !doc.getElementById('run-btn').classList.contains('hidden'));
 
 const caseDef = live.packs.packs[0].cases[2];
-const sliders = [...doc.querySelectorAll('#controls .control')];
-check('control per schema entry', sliders.length === caseDef.controls.length + caseDef.states.length,
-  `${sliders.length} rendered`);
-const labels = [...doc.querySelectorAll('#controls .control-label')].map((l) => l.textContent);
-check('labels come from the pack', labels.includes('Battery power limit') && labels.includes('Houses in the neighbourhood'));
-const firstRange = doc.querySelector('#controls input[type=range]');
-check('slider bounds from the pack', firstRange.min === String(caseDef.controls[0].min) &&
-  firstRange.max === String(caseDef.controls[0].max), `min=${firstRange.min} max=${firstRange.max}`);
-const socStart = doc.getElementById('control-soc_start');
-check('state control rendered too', socStart !== null && socStart.value === '90', socStart && socStart.value);
+// Every setting in this case targets a model that the diagram draws, so the
+// panel keeps none of them and points at the diagram instead.
+check('assets own their settings, so the panel holds none',
+  doc.querySelectorAll('#controls .control').length === 0,
+  `${doc.querySelectorAll('#controls .control').length} left in the panel`);
+check('the panel says where the settings went',
+  !doc.getElementById('controls-hint').classList.contains('hidden'));
 check('day presets rendered', doc.querySelectorAll('#day-presets .preset').length === 2);
 check('date input bounded by data range', doc.getElementById('day-input').min === '2012-01-01' &&
   doc.getElementById('day-input').max === '2012-12-30');
@@ -140,12 +146,78 @@ check('flows dark before a run',
 check('scrubber hidden before a run',
   topoCard.querySelector('.topo-scrub').classList.contains('hidden'));
 
-console.log('=== 4. move a slider ===');
-const powerSlider = doc.getElementById('control-battery_power');
-powerSlider.value = '2.5';
-powerSlider.dispatchEvent(new window.Event('input'));
-const readout = powerSlider.closest('.control').querySelector('.control-value').textContent;
-check('readout follows the slider', readout.startsWith('2.5'), readout);
+console.log('=== 3c. an asset carries its own settings ===');
+const tapAsset = (id) => topoCard.querySelector(`[data-node="${id}"]`)
+  .dispatchEvent(new window.Event('click', { bubbles: true }));
+tapAsset('Battery1');
+const pop = topoCard.querySelector('.topo-pop');
+// Tapping toggles, so asking for an asset that is already open would close it.
+const openAsset = (id) => {
+  if (pop.classList.contains('hidden')) { tapAsset(id); return; }
+  const head = pop.querySelector('.topo-pop-head strong');
+  if (!head || head.textContent !== id) tapAsset(id);
+};
+check('popover opens on the tapped asset', !pop.classList.contains('hidden') &&
+  pop.querySelector('.topo-pop-head strong').textContent === 'Battery1');
+check('popover floats over the diagram', pop.parentElement === topoCard);
+const popLabels = [...pop.querySelectorAll('.pop-control-label')].map((l) => l.textContent);
+const batteryControls = caseDef.controls
+  .filter((c) => (c.targets || []).some((t) => t.model === 'Battery1'))
+  .concat(caseDef.states.filter((c) => c.model === 'Battery1'));
+check('one editor per setting this asset owns',
+  pop.querySelectorAll('.pop-control').length === batteryControls.length,
+  `${pop.querySelectorAll('.pop-control').length} vs ${batteryControls.length}`);
+check('labels come from the pack',
+  popLabels.includes('Battery power limit') && popLabels.includes('Battery capacity'),
+  JSON.stringify(popLabels));
+const popPower = doc.getElementById('pop-battery_power');
+const powerSpec = caseDef.controls.find((c) => c.id === 'battery_power');
+check('the number field is bounded by the pack',
+  popPower.min === String(powerSpec.min) && popPower.max === String(powerSpec.max),
+  `min=${popPower.min} max=${popPower.max}`);
+check('a state is editable here too',
+  doc.getElementById('pop-soc_start') !== null &&
+  doc.getElementById('pop-soc_start').value === '90',
+  doc.getElementById('pop-soc_start') && doc.getElementById('pop-soc_start').value);
+check('settings that belong to another asset are not shown',
+  !popLabels.includes('Houses in the neighbourhood'), JSON.stringify(popLabels));
+
+// Houses targets Load1, so it belongs to the homes, not the battery.
+openAsset('Load1');
+check('tapping another asset switches the popover',
+  pop.querySelector('.topo-pop-head strong').textContent === 'Load1' &&
+  [...pop.querySelectorAll('.pop-control-label')]
+    .some((l) => l.textContent === 'Houses in the neighbourhood'));
+
+console.log('=== 4. change a setting on the diagram ===');
+openAsset('Battery1');
+const popRange = doc.getElementById('pop-battery_power').closest('.pop-control')
+  .querySelector('input[type=range]');
+popRange.value = '2.5';
+popRange.dispatchEvent(new window.Event('input'));
+check('the number field follows the slider',
+  doc.getElementById('pop-battery_power').value === '2.5',
+  doc.getElementById('pop-battery_power').value);
+
+// The other direction: type a value and the slider catches up.
+const popEnergy = doc.getElementById('pop-battery_energy');
+const energyRange = popEnergy.closest('.pop-control').querySelector('input[type=range]');
+const energySpec = caseDef.controls.find((c) => c.id === 'battery_energy');
+popEnergy.value = '4';
+popEnergy.dispatchEvent(new window.Event('input'));
+check('the slider follows a typed value', energyRange.value === '4', energyRange.value);
+
+// Out of range on purpose: `change` (blur or Enter) clamps to the pack's max.
+popEnergy.value = String(energySpec.max + 99);
+popEnergy.dispatchEvent(new window.Event('change'));
+check('a typed value is clamped to the pack range',
+  Number(popEnergy.value) === energySpec.max, popEnergy.value);
+
+// Back to the default, so the run below is the baseline the rest compares to.
+popEnergy.value = String(energySpec.default);
+popEnergy.dispatchEvent(new window.Event('change'));
+check('capacity restored to the pack default',
+  Number(popEnergy.value) === energySpec.default, popEnergy.value);
 
 console.log('=== 5. run the simulation ===');
 doc.getElementById('run-btn').click();
@@ -153,10 +225,15 @@ await tick(80);
 check('POST body carries pack/case/day', postBodies.length === 1 &&
   postBodies[0].pack === 'power_balance' && postBodies[0].case === 'res_battery' &&
   postBodies[0].day === '2012-06-01');
-check('POST body carries the moved slider', postBodies[0].settings.battery_power === 2.5,
+check('POST body carries the value set on the diagram',
+  postBodies[0].settings.battery_power === 2.5,
   `battery_power=${postBodies[0].settings.battery_power}`);
+check('POST body carries the restored default',
+  postBodies[0].settings.battery_energy === energySpec.default,
+  `battery_energy=${postBodies[0].settings.battery_energy}`);
 check('POST body carries the initial state', postBodies[0].states.soc_start === 90);
-check('controls disabled while running', doc.querySelector('#controls input').disabled);
+check('the diagram\'s inputs are disabled while running',
+  doc.getElementById('pop-battery_power').disabled);
 check('Stop button shown', !doc.getElementById('cancel-btn').classList.contains('hidden'));
 
 const widths = [];
@@ -194,7 +271,8 @@ const socShown = [...doc.querySelectorAll('#charts .chart-card')[1].querySelecto
   .map((n) => n.textContent);
 check('battery chart reads Battery1.soc', socShown[0] === lastRow[colIndex.get('Battery1.soc')].toFixed(2),
   `shown=${socShown[0]}`);
-check('controls re-enabled', !doc.querySelector('#controls input').disabled);
+check('the diagram\'s inputs are re-enabled',
+  !doc.getElementById('pop-battery_power').disabled);
 check('Stop hidden again', doc.getElementById('cancel-btn').classList.contains('hidden'));
 
 const stepRows = doc.querySelectorAll('.step-table tbody tr');
@@ -221,39 +299,51 @@ check('polled results incrementally with rising since', sinces.length >= 3 &&
 check('never refetched from zero after the first page',
   sinces.filter((s) => s === 0).length === 1, JSON.stringify(sinces));
 
-console.log('=== 8. topology follows the finished run ===');
+console.log('=== 8. the diagram replays the finished day on its own ===');
 const topoBadgeOf = (node) =>
   topoCard.querySelector(`[data-node="${node}"] .topo-badge`).textContent;
+const topoBadgesOf = (node) =>
+  [...topoCard.querySelectorAll(`[data-node="${node}"] .topo-badge`)].map((b) => b.textContent);
 check('scrubber shown once rows exist',
   !topoCard.querySelector('.topo-scrub').classList.contains('hidden'));
 const topoSlider = topoCard.querySelector('.topo-slider');
-check('slider spans the run', topoSlider.max === String(results.rows.length - 1) &&
-  topoSlider.value === topoSlider.max, `max=${topoSlider.max} value=${topoSlider.value}`);
-check('clock reads the newest row',
-  topoCard.querySelector('.topo-clock').textContent === '23:30',
+const topoPlay = topoCard.querySelector('.topo-play');
+check('slider spans the run', topoSlider.max === String(results.rows.length - 1),
+  `max=${topoSlider.max}`);
+check('finishing starts the automatic replay, unattended',
+  topoPlay.getAttribute('aria-label') === 'Pause');
+
+// Freeze the replay to read a moment without racing its own timer: wherever
+// it landed, that must not be the last step (the diagram used to park there),
+// and everything the diagram reports must agree with the data for that step.
+topoPlay.click();
+const replayIndex = Number(topoSlider.value);
+const replayRow = results.rows[replayIndex];
+check('the replay rewound towards the start rather than parking on the last step',
+  replayIndex < results.rows.length - 1, `at row ${replayIndex}`);
+check('clock reads the frozen replay moment',
+  topoCard.querySelector('.topo-clock').textContent === clockOf(replayRow[0]),
   topoCard.querySelector('.topo-clock').textContent);
-check('load badge formats the latest value',
-  topoBadgeOf('Load1') === `${lastRow[colIndex.get('Load1.load_dem')].toFixed(2)} kW`,
+check('load badge formats that moment\'s value',
+  topoBadgeOf('Load1') === `${replayRow[colIndex.get('Load1.load_dem')].toFixed(2)} kW`,
   topoBadgeOf('Load1'));
-const topoBadgesOf = (node) =>
-  [...topoCard.querySelectorAll(`[data-node="${node}"] .topo-badge`)].map((b) => b.textContent);
-check('battery badge is its state of charge',
-  topoBadgeOf('Battery1') === `${lastRow[colIndex.get('Battery1.soc')].toFixed(0)}%`,
+check('battery badge is its state of charge then',
+  topoBadgeOf('Battery1') === `${replayRow[colIndex.get('Battery1.soc')].toFixed(0)}%`,
   topoBadgeOf('Battery1'));
 check('battery also reports the power it moved',
   topoBadgesOf('Battery1')[1] ===
-    `${Math.abs(lastRow[colIndex.get('Battery1.p_out')]).toFixed(2)} kW`,
+    `${Math.abs(replayRow[colIndex.get('Battery1.p_out')]).toFixed(2)} kW`,
   topoBadgesOf('Battery1')[1]);
 // The exchange is signed in the data; the arrow shows the direction, so the
 // badge prints its size.
 check('grid badge is the size of the exchange',
-  topoBadgeOf('Grid') === `${Math.abs(lastRow[colIndex.get('Controller1.dump')]).toFixed(2)} kW`,
+  topoBadgeOf('Grid') === `${Math.abs(replayRow[colIndex.get('Controller1.dump')]).toFixed(2)} kW`,
   topoBadgeOf('Grid'));
 const chargeBar = topoCard.querySelector('.topo-charge-fill');
-const socNow = lastRow[colIndex.get('Battery1.soc')];
+const socThen = replayRow[colIndex.get('Battery1.soc')];
 check('charge bar filled to the state of charge',
-  Math.abs(Number(chargeBar.getAttribute('width')) - 44 * socNow / 100) < 0.01,
-  `width=${chargeBar.getAttribute('width')} soc=${socNow}`);
+  Math.abs(Number(chargeBar.getAttribute('width')) - 44 * socThen / 100) < 0.01,
+  `width=${chargeBar.getAttribute('width')} soc=${socThen}`);
 // Demand is positive on a Load -> Controller edge with sign -1, so its arrow
 // points back at the homes: base angle 180 plus the 180 flip.
 const arrows = [...topoCard.querySelectorAll('.topo-arrow')];
@@ -263,6 +353,13 @@ check('load arrow points at the homes',
 const flows = [...topoCard.querySelectorAll('.topo-edge-flow')];
 check('an active flow is visible and weighted', flows.some((f) =>
   f.getAttribute('stroke-opacity') === '0.9' && Number(f.getAttribute('stroke-width')) > 2));
+
+// The replay is the diagram's own business -- it must not have dragged the
+// charts or the table away from the finished run's last step.
+check('the charts stayed on the finished run, unmoved by the replay',
+  JSON.stringify(shown) === JSON.stringify(expected), JSON.stringify(shown));
+check('the table stayed on the newest step too',
+  doc.querySelector('.step-table tbody tr.is-current') === stepRows[stepRows.length - 1]);
 
 console.log('=== 8b. scrub back to midnight ===');
 topoSlider.value = '0';
@@ -290,41 +387,58 @@ check('the table highlights the same step',
   doc.querySelector('.step-table tbody tr.is-current') ===
   doc.querySelectorAll('.step-table tbody tr')[0]);
 
-console.log('=== 8b3. tap an asset for its settings ===');
-topoCard.querySelector('[data-node="Battery1"]').dispatchEvent(
-  new window.Event('click', { bubbles: true }));
-const panel = topoCard.querySelector('.topo-detail');
-check('panel opens for the tapped asset', !panel.classList.contains('hidden') &&
-  panel.querySelector('.topo-detail-head strong').textContent === 'Battery1');
-const panelTerms = [...panel.querySelectorAll('dt')].map((t) => t.textContent);
-const panelValues = [...panel.querySelectorAll('dd')].map((t) => t.textContent);
-check('settings that target this model are listed',
-  panelTerms.includes('Battery capacity') && panelTerms.includes('Minimum state of charge'),
-  JSON.stringify(panelTerms));
-check('settings show the values the run used',
-  panelValues[panelTerms.indexOf('Battery capacity')] === '0.8 kWh',
-  panelValues[panelTerms.indexOf('Battery capacity')]);
+console.log('=== 8b3. tap an asset for its readings ===');
+openAsset('Battery1');
+check('popover opens for the tapped asset', !pop.classList.contains('hidden') &&
+  pop.querySelector('.topo-pop-head strong').textContent === 'Battery1');
+const popTerms = [...pop.querySelectorAll('dt')].map((t) => t.textContent);
+const popValues = [...pop.querySelectorAll('dd')].map((t) => t.textContent);
+check('settings that target this model are editable here',
+  [...pop.querySelectorAll('.pop-control-label')].map((l) => l.textContent)
+    .includes('Battery capacity'),
+  JSON.stringify([...pop.querySelectorAll('.pop-control-label')].map((l) => l.textContent)));
+check('the editor shows the value the run used',
+  doc.getElementById('pop-battery_energy').value === '0.8',
+  doc.getElementById('pop-battery_energy').value);
+check('nothing warns of a pending edit yet',
+  pop.querySelector('.topo-pop-note').classList.contains('hidden'));
 check('readings are labelled the way the pack names them',
-  panelTerms.includes('Battery SOC (%)') && panelTerms.includes('Battery power (kW)'),
-  JSON.stringify(panelTerms));
+  popTerms.includes('Battery SOC (%)') && popTerms.includes('Battery power (kW)'),
+  JSON.stringify(popTerms));
 check('readings are for the scrubbed step',
-  panelValues[panelTerms.indexOf('Battery SOC (%)')] ===
+  popValues[popTerms.indexOf('Battery SOC (%)')] ===
     `${firstRow[colIndex.get('Battery1.soc')].toFixed(0)}%`,
-  panelValues[panelTerms.indexOf('Battery SOC (%)')]);
-check('panel heads its readings with the time',
-  [...panel.querySelectorAll('h4')].some((h) => h.textContent === 'At 00:00'),
-  [...panel.querySelectorAll('h4')].map((h) => h.textContent).join(' / '));
+  popValues[popTerms.indexOf('Battery SOC (%)')]);
+check('the popover heads its readings with the time',
+  [...pop.querySelectorAll('h4')].some((h) => h.textContent === 'At 00:00'),
+  [...pop.querySelectorAll('h4')].map((h) => h.textContent).join(' / '));
 
-// The grid's exchange is reported on the controller's column, so the panel has
-// to reach it through the badge rather than through Grid's own monitor items.
-topoCard.querySelector('[data-node="Grid"]').dispatchEvent(
-  new window.Event('click', { bubbles: true }));
-check('the grid panel finds its column too',
-  [...panel.querySelectorAll('dt')].some((t) => t.textContent === 'Power to grid (kW)'),
-  [...panel.querySelectorAll('dt')].map((t) => t.textContent).join(', '));
-topoCard.querySelector('[data-node="Grid"]').dispatchEvent(
-  new window.Event('click', { bubbles: true }));
-check('tapping the same asset again closes the panel', panel.classList.contains('hidden'));
+// Scrubbing must refresh the numbers without rebuilding the inputs, or a drag
+// would be dropped the moment a new row arrived.
+const editorBefore = doc.getElementById('pop-battery_energy');
+topoSlider.value = '5';
+topoSlider.dispatchEvent(new window.Event('input'));
+check('readings follow the scrub while the popover is open',
+  [...pop.querySelectorAll('h4')].some((h) => h.textContent ===
+    `At ${topoCard.querySelector('.topo-clock').textContent}`),
+  [...pop.querySelectorAll('h4')].map((h) => h.textContent).join(' / '));
+check('the editors survive a refresh',
+  doc.getElementById('pop-battery_energy') === editorBefore);
+topoSlider.value = '0';
+topoSlider.dispatchEvent(new window.Event('input'));
+
+// The grid's exchange is reported on the controller's column, so the popover
+// has to reach it through the badge rather than through Grid's own monitor
+// items -- and the grid owns no settings at all.
+openAsset('Grid');
+check('the grid popover finds its column too',
+  [...pop.querySelectorAll('dt')].some((t) => t.textContent === 'Power to grid (kW)'),
+  [...pop.querySelectorAll('dt')].map((t) => t.textContent).join(', '));
+check('an asset with no settings says so',
+  [...pop.querySelectorAll('.topo-pop-empty')].some((n) =>
+    n.textContent === 'No settings of its own.'));
+tapAsset('Grid');
+check('tapping the same asset again closes the popover', pop.classList.contains('hidden'));
 
 console.log('=== 8b4. the table scrubs too ===');
 doc.querySelectorAll('.step-table tbody tr')[10].dispatchEvent(
@@ -401,6 +515,48 @@ await tick(250);
 check('pause holds the moment', Number(topoSlider.value) === playedTo,
   `still ${topoSlider.value}`);
 
+console.log('=== 8d. adjust the replay speed from Options ===');
+const optionsBtn = doc.getElementById('options-btn');
+const optionsPop = doc.getElementById('options-pop');
+const speedRange = doc.getElementById('speed-range');
+const speedReadout = doc.getElementById('speed-readout');
+check('the options popover starts closed', optionsPop.classList.contains('hidden'));
+optionsBtn.click();
+check('opening Options reveals the speed control',
+  !optionsPop.classList.contains('hidden') && optionsBtn.getAttribute('aria-expanded') === 'true');
+
+doc.body.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+check('a tap elsewhere closes it',
+  optionsPop.classList.contains('hidden') && optionsBtn.getAttribute('aria-expanded') === 'false');
+optionsBtn.click();
+
+// Slowest vs fastest notch: the readout climbs as the slider moves right, and
+// it is not just a label -- it actually changes how fast the diagram plays.
+speedRange.value = speedRange.min;
+speedRange.dispatchEvent(new window.Event('input'));
+const slowReadout = speedReadout.textContent;
+topoSlider.value = '0';
+topoSlider.dispatchEvent(new window.Event('input'));
+playBtn.click();
+await tick(500);
+const slowAdvance = Number(topoSlider.value);
+playBtn.click();
+
+speedRange.value = speedRange.max;
+speedRange.dispatchEvent(new window.Event('input'));
+const fastReadout = speedReadout.textContent;
+check('the readout reports a higher rate at the fast end',
+  parseFloat(fastReadout) > parseFloat(slowReadout), `${slowReadout} -> ${fastReadout}`);
+
+topoSlider.value = '0';
+topoSlider.dispatchEvent(new window.Event('input'));
+playBtn.click();
+await tick(500);
+const fastAdvance = Number(topoSlider.value);
+playBtn.click();
+check('raising the speed plays through more rows in the same time',
+  fastAdvance > slowAdvance, `slow=${slowAdvance} fast=${fastAdvance}`);
+
 console.log('=== 9. pin a run and compare the next one ===');
 const pinbar = doc.getElementById('pinbar');
 check('pin offered once a run has finished', !pinbar.classList.contains('hidden') &&
@@ -415,9 +571,14 @@ check('day totals shown for a single run', soloHeaders.length === 2 &&
 
 // Change a setting and run again. The finished run should be kept as the
 // baseline without the user having to ask for it.
-const energySlider = doc.getElementById('control-battery_energy');
-energySlider.value = '4';
-energySlider.dispatchEvent(new window.Event('input'));
+openAsset('Battery1');
+const energyAgain = doc.getElementById('pop-battery_energy');
+energyAgain.value = '4';
+energyAgain.dispatchEvent(new window.Event('change'));
+check('the popover warns the charts predate the edit',
+  !topoCard.querySelector('.topo-pop-note').classList.contains('hidden') &&
+  topoCard.querySelector('.topo-pop-note').textContent.includes('0.8 kWh'),
+  topoCard.querySelector('.topo-pop-note').textContent);
 doc.getElementById('run-btn').click();
 await tick(80);
 

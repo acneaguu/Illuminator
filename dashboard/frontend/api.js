@@ -103,11 +103,15 @@ export const api = {
     return request('GET', `/api/packs/${enc(pack)}/cases/${enc(caseId)}/topology`);
   },
 
-  async baseline(pack, caseId, { day, houses } = {}) {
+  async baseline(pack, caseId, { day, settings } = {}) {
     if (MOCK) return fixture('baseline_base');
     const query = new URLSearchParams();
     if (day) query.set('day', day);
-    if (houses !== undefined && houses !== null) query.set('houses', String(houses));
+    // Control values keyed by control id, exactly as POST /api/runs takes
+    // them; the server ignores unknown ids and clamps out-of-range values.
+    for (const [id, value] of Object.entries(settings || {})) {
+      if (value !== undefined && value !== null) query.set(id, String(value));
+    }
     const suffix = query.toString() ? `?${query}` : '';
     return request('GET', `/api/packs/${enc(pack)}/cases/${enc(caseId)}/baseline${suffix}`);
   },

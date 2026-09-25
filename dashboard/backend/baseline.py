@@ -53,22 +53,25 @@ def _load_series(path: Path, value_column: str):
 
 
 def profile(pack: dict, case: dict, day: str, settings: Dict[str, Any]) -> Dict[str, Any]:
-    """The scaled demand profile for one day, plus optional stacked mix layers.
+    """The scaled profile for one day, plus optional stacked mix layers.
 
-    ``scale: power`` reproduces the tutorial's conversion of 15-minute energy
-    readings to average power (``load * houses * 15/60``); ``raw`` just scales by
-    the number of houses, as Tutorial 3's opening plot does.
+    ``scale_by`` names the control whose value multiplies the series -- the
+    number of houses, in the tutorials; nothing here knows which. ``scale:
+    power`` reproduces the tutorial's conversion of 15-minute energy readings to
+    average power (``load * factor * 15/60``); ``raw`` multiplies only, as
+    Tutorial 3's opening plot does.
     """
     spec = case["baseline"]
-    houses = float(settings.get("houses", 1) or 1)
+    scale_control = spec.get("scale_by")
+    factor = float(settings.get(scale_control, 1) or 1) if scale_control else 1.0
 
     series = _load_series(packs.data_dir_for(pack) / spec["file"], spec["value_column"])
 
     scale_mode = spec.get("scale", "raw")
     if scale_mode == "power":
-        scaled = series * houses * 15 / 60
+        scaled = series * factor * 15 / 60
     elif scale_mode in ("raw", "energy"):
-        scaled = series * houses
+        scaled = series * factor
     else:
         raise ValueError(f"unsupported baseline scale {scale_mode!r}")
 

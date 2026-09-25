@@ -44,6 +44,11 @@ TYPE_CATEGORY = {
 #: Controller_T4, ...) all render with the controller icon.
 CATEGORY_PREFIXES = (("Controller", "controller"),)
 
+#: Every category the frontend has an icon and colour for. A pack may name a
+#: category explicitly on an extra_node; anything outside this set would fall
+#: back to the generic glyph silently, so check_pack flags it instead.
+KNOWN_CATEGORIES = set(TYPE_CATEGORY.values()) | {"controller", "generic"}
+
 
 def category_for(model_type: Optional[str]) -> str:
     """Icon / styling category for an Illuminator model type."""
@@ -132,7 +137,8 @@ class Scenario:
 # Pack loading
 # ---------------------------------------------------------------------------
 
-_PACK_CACHE: Dict[str, dict] = {}
+#: pack id -> (file mtime it was read at, normalised pack).
+_PACK_CACHE: Dict[str, Tuple[float, dict]] = {}
 
 
 def _normalise_control(raw: dict, index: int) -> dict:
@@ -214,6 +220,9 @@ def _normalise_case(pack: dict, raw: dict, index: int) -> dict:
     case["csv_overrides"] = dict(case.get("csv_overrides") or {})
     case.setdefault("topology", {})
     case.setdefault("summary", {})
+    # Heading over the settings panel; a pack may replace it with its own word
+    # ("Neighbourhood" on Tutorial 1's demand-only view).
+    case.setdefault("controls_heading", "Settings")
 
     day = dict(case.get("day") or {})
     day.setdefault("default", pack.get("day", {}).get("default"))
@@ -232,12 +241,19 @@ def _normalise_case(pack: dict, raw: dict, index: int) -> dict:
 
 
 def load_pack(pack_id: str, *, refresh: bool = False) -> dict:
-    """Load and normalise one pack by id."""
-    if not refresh and pack_id in _PACK_CACHE:
-        return _PACK_CACHE[pack_id]
+    """Load and normalise one pack by id.
+
+    Cached against the file's mtime, so an edited pack is served on the next
+    request without restarting the server.
+    """
     path = PACKS_DIR / f"{pack_id}.yaml"
     if not path.exists():
+        _PACK_CACHE.pop(pack_id, None)
         raise KeyError(f"no such pack: {pack_id}")
+    mtime = path.stat().st_mtime
+    cached = _PACK_CACHE.get(pack_id)
+    if not refresh and cached and cached[0] == mtime:
+        return cached[1]
     raw = _load_yaml(path)
     pack = dict(raw)
     pack.setdefault("id", pack_id)
@@ -247,7 +263,7 @@ def load_pack(pack_id: str, *, refresh: bool = False) -> dict:
     pack["cases"] = [_normalise_case(pack, c, i) for i, c in enumerate(pack.get("cases") or [])]
     if not pack["cases"]:
         raise PackError(f"pack '{pack_id}' has no cases")
-    _PACK_CACHE[pack_id] = pack
+    _PACK_CACHE[pack_id] = (mtime, pack)
     return pack
 
 
@@ -303,6 +319,16 @@ def state_defaults(case: dict) -> Dict[str, Any]:
 
 def _clamp(control: dict, value: Any) -> Tuple[Any, Optional[str]]:
     if control["type"] == "toggle":
+        # Values may arrive as query-string text; "false" must not mean True.
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in ("true", "1", "on", "yes"):
+                return True, None
+            if lowered in ("false", "0", "off", "no", ""):
+                return False, None
+            return control["default"], (
+                f"{control['id']}: {value!r} is not a boolean, using default {control['default']}"
+            )
         return bool(value), None
     try:
         number = float(value)
@@ -539,7 +565,13 @@ def build_topology(pack: dict, case: dict) -> dict:
         if connection.get("time_shifted"):
             edge["time_shifted"] = True
 
-    edges = list(edge_index.values())
+    # An overlay may drop a connection from the diagram outright -- typically
+    # an informational return leg (e.g. a state reported back for a controller
+    # to read) that duplicates a pair already carrying the animated flow, and
+    # would otherwise draw as a second, bowed, do-nothing line.
+    hidden_edges = {tuple(pair) for pair in overlay.get("hidden_edges") or []}
+    edges = [edge for edge in edge_index.values()
+             if (edge["from"], edge["to"]) not in hidden_edges]
 
     positions = dict(overlay.get("positions") or {})
     missing = [n for n in visible if n not in positions]
@@ -622,6 +654,7 @@ def case_payload(case: dict) -> Dict[str, Any]:
         "kind": case["kind"],
         "scenario": case.get("scenario"),
         "day": case["day"],
+        "controls_heading": case["controls_heading"],
         "controls": case["controls"],
         "states": case["states"],
         "charts": case["charts"],
@@ -670,6 +703,11 @@ def check_pack(pack_id: str) -> List[str]:
             baseline_file = data_dir_for(pack) / case["baseline"]["file"]
             if not baseline_file.exists():
                 problems.append(f"{where}: baseline file missing: {baseline_file}")
+            scale_by = case["baseline"].get("scale_by")
+            if scale_by and scale_by not in {c["id"] for c in case["controls"]}:
+                problems.append(
+                    f"{where}: baseline scale_by '{scale_by}' is not a control of this case"
+                )
             continue
 
         scenario_path = REPO_ROOT / case["scenario"]
@@ -744,6 +782,13 @@ def check_pack(pack_id: str) -> List[str]:
             extra_ids.add(extra["id"])
             if extra["id"] in scenario.models:
                 problems.append(f"{where}: extra_node '{extra['id']}' shadows a scenario model")
+            # The frontend falls back to the generic glyph for a category it
+            # does not know, so a typo here would only ever fail silently.
+            explicit = extra.get("category")
+            if explicit and explicit not in KNOWN_CATEGORIES:
+                problems.append(
+                    f"{where}: extra_node '{extra['id']}' has unknown category '{explicit}'"
+                )
             if not extra.get("position"):
                 # Auto-layout works off the scenario graph, which knows nothing
                 # about a node that is not in it.
@@ -763,6 +808,13 @@ def check_pack(pack_id: str) -> List[str]:
             for end in ("from", "to"):
                 if flow.get(end) and flow[end] not in drawable:
                     problems.append(f"{where}: flow refers to unknown model '{flow[end]}'")
+        for pair in overlay.get("hidden_edges") or []:
+            if len(pair) != 2:
+                problems.append(f"{where}: hidden_edges entry {pair!r} must be [from, to]")
+                continue
+            for end in pair:
+                if end not in drawable:
+                    problems.append(f"{where}: hidden_edges refers to unknown model '{end}'")
 
         for section in ("sum_columns", "sample_columns"):
             for column in (case["summary"].get(section) or {}):

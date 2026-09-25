@@ -15,7 +15,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -109,10 +109,15 @@ def get_topology(pack_id: str, case_id: str) -> Dict[str, Any]:
 
 
 @app.get("/api/packs/{pack_id}/cases/{case_id}/baseline")
-def get_baseline(pack_id: str, case_id: str,
-                 day: Optional[str] = None,
-                 houses: Optional[float] = Query(default=None)) -> Dict[str, Any]:
-    """Profile for a dataset case -- computed directly from the data file."""
+def get_baseline(pack_id: str, case_id: str, request: Request,
+                 day: Optional[str] = None) -> Dict[str, Any]:
+    """Profile for a dataset case -- computed directly from the data file.
+
+    Control values arrive as query parameters keyed by control id -- the same
+    ids ``POST /api/runs`` takes in ``settings`` -- so a pack can give a dataset
+    case any controls it likes without an API change. Unknown ids are ignored
+    with a note; out-of-range values are clamped, exactly as for a run.
+    """
     try:
         pack, case = packs.get_case(pack_id, case_id)
     except KeyError as exc:
@@ -122,7 +127,8 @@ def get_baseline(pack_id: str, case_id: str,
                             detail=f"case '{case_id}' is a simulation, not a dataset view")
     try:
         resolved_day = packs.validate_day(case, day)
-        requested = {"houses": houses} if houses is not None else {}
+        requested = {key: value for key, value in request.query_params.items()
+                     if key != "day"}
         settings, notes = packs.resolve_settings(case, requested)
         payload = baseline.profile(pack, case, resolved_day, settings)
     except (ValueError, KeyError) as exc:

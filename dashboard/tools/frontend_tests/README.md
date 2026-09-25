@@ -24,8 +24,10 @@ NODE_PATH="$TMPDIR/node_modules" node test-edges.mjs
 rendered from the schema, a simulation run with progressive polling, charts,
 the per-step results table, the topology view (badges, flow directions, the
 time scrubber, playback, the asset panel and the timestep the charts and table
-follow) and run comparison (pin, ghost curves, day totals). `test-edges.mjs` covers engine failure, cancellation, the 409
-conflict takeover, mock mode, and the column-order defence.
+follow) and run comparison (pin, ghost curves, day totals). `test-edges.mjs`
+covers engine failure, cancellation, the 409 conflict takeover, the tutorial
+switcher (including the `?pack=` deep link), leaving a case while a run is still
+in flight, mock mode, and the column-order defence.
 
 `NODE_PATH` works because the harness resolves jsdom through `require`; set
 `JSDOM_PATH` to an explicit path instead if you prefer.

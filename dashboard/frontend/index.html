@@ -16,6 +16,8 @@
     <h1 id="pack-title">Illuminator</h1>
     <p id="pack-subtitle">Loading…</p>
   </div>
+  <!-- One button per tutorial; hidden while only one pack is installed. -->
+  <nav id="pack-switch" class="pack-switch hidden" aria-label="Tutorials"></nav>
   <div class="topbar-right">
     <span id="mock-badge" class="badge hidden">demo data</span>
     <span id="status-pill" class="pill pill-idle">Ready</span>
@@ -26,41 +28,60 @@
 
 <main class="layout">
 
-  <aside class="panel controls-panel" aria-label="Settings">
+  <section class="panel toolbar" aria-label="Settings">
     <p id="case-description" class="case-description"></p>
 
-    <section id="day-section" class="control-section">
-      <h2>Day</h2>
-      <div id="day-presets" class="preset-row"></div>
-      <input type="date" id="day-input" class="day-input">
-    </section>
+    <div class="toolbar-row">
+      <section id="day-section" class="toolbar-group">
+        <h2>Day</h2>
+        <div class="toolbar-field">
+          <div id="day-presets" class="preset-row"></div>
+          <input type="date" id="day-input" class="day-input">
+        </div>
+      </section>
 
-    <section class="control-section">
-      <h2 id="controls-heading">Settings</h2>
-      <div id="controls"></div>
-    </section>
+      <section class="toolbar-group toolbar-grow">
+        <h2 id="controls-heading">Settings</h2>
+        <p id="controls-hint" class="controls-hint hidden">
+          Tap an asset in the diagram to read and change its settings.
+        </p>
+        <div id="controls"></div>
+      </section>
 
-    <div id="notes" class="notes" role="status"></div>
-
-    <div class="actions">
-      <button id="run-btn" class="btn btn-primary" type="button">Simulate</button>
-      <button id="cancel-btn" class="btn btn-danger hidden" type="button">Stop</button>
-      <button id="reset-btn" class="btn btn-ghost" type="button">Reset</button>
+      <div class="actions">
+        <button id="run-btn" class="btn btn-primary" type="button">Simulate</button>
+        <button id="cancel-btn" class="btn btn-danger hidden" type="button">Stop</button>
+        <button id="reset-btn" class="btn btn-ghost" type="button">Reset</button>
+        <div class="options-menu">
+          <button id="options-btn" class="btn btn-ghost" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-label="Playback options">
+            Options
+          </button>
+          <div id="options-pop" class="options-pop hidden" role="dialog" aria-label="Playback options">
+            <label class="options-label" for="speed-range">Diagram replay speed</label>
+            <input type="range" id="speed-range" class="options-range"
+                   min="1" max="10" step="1" aria-describedby="speed-readout">
+            <span id="speed-readout" class="options-readout"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="progress" class="progress hidden">
       <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
       <span class="progress-label" id="progress-label"></span>
     </div>
-  </aside>
+
+    <div id="notes" class="notes" role="status"></div>
+  </section>
 
   <section class="panel results-panel" aria-label="Results">
     <div id="error-panel" class="error-panel hidden"></div>
 
+    <div id="pinbar" class="pinbar hidden"></div>
+
     <!-- The system diagram: present before a run, animated during one. -->
     <div id="topology-slot"></div>
-
-    <div id="pinbar" class="pinbar hidden"></div>
 
     <div id="placeholder" class="placeholder">
       <p>Choose your settings, then press <strong>Simulate</strong>.</p>

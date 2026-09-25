@@ -16,6 +16,7 @@
  */
 
 import { clockOf } from './charts.js';
+import { buildCompactControl } from './controls.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -25,11 +26,23 @@ const NODE_RADIUS = 27;
 /** Perpendicular bow for the second edge of an A->B / B->A pair. */
 const CURVE_OFFSET = 30;
 
-/** Milliseconds per step when playing the day back. */
-const PLAY_STEP_MS = 100;
+/** Default milliseconds per step when playing the day back -- manually or in
+ *  the automatic replay once a run finishes. The Options popover (app.js)
+ *  overrides this via `setSpeed`; this is only the value before anyone has. */
+const DEFAULT_PLAY_STEP_MS = 300;
 
 /** Below this share of the column's range a flow is treated as "off". */
 const FLOW_FLOOR = 0.015;
+
+/* Flow marks: near-zero dashes with a round cap render as dots, spaced by the
+   gap. Dot size is the stroke width, so magnitude still reads as weight.
+
+   The floor is deliberately well clear of a hairline: a small flow still has
+   to be legible across a room, and the range above it carries the comparison.
+   The gap leaves daylight between dots even at the widest. */
+const DOT_PATTERN = '0.1 11';
+const DOT_MIN_WIDTH = 3.4;
+const DOT_MAX_WIDTH = 6.5;
 
 /** Width of a node's charge bar, in SVG units. */
 const BAR_WIDTH = 44;
@@ -59,6 +72,15 @@ const ICONS = {
   ],
   load: [
     { d: 'M3.5 12 L12 4.5 L20.5 12 M6 10.5 V19.5 H18 V10.5 M10.7 19.5 V15 h2.6 v4.5' },
+  ],
+  load_ev: [
+    // A charging plug: two prongs, the body, and a curl of cable.
+    { d: 'M9 3 v3.5 M15 3 v3.5 M7.5 6.5 h9 v4 a4.5 4.5 0 0 1 -9 0 z M12 15 v3 a3 3 0 0 1 -3 3' },
+  ],
+  load_hp: [
+    // A heat-pump unit: the box, the fan ring, and its hub.
+    { d: 'M4.5 6 h15 v12 h-15 z M12 12 m-3.4 0 a3.4 3.4 0 1 0 6.8 0 a3.4 3.4 0 1 0 -6.8 0' },
+    { d: 'M12 12 m-1.2 0 a1.2 1.2 0 1 0 2.4 0 a1.2 1.2 0 1 0 -2.4 0', fill: true },
   ],
   battery: [
     { d: 'M3.5 7.5 h15 v9 h-15 z M18.5 10.2 h2 v3.6 h-2 z' },
@@ -149,6 +171,7 @@ function edgeGeometry(from, to, curved) {
  *   onCursor(index|null)  -- the selected timestep changed
  *   detailsFor(nodeId, row) -> { title, subtitle, settings, readings } | null
  *     what to show when an asset is tapped; the caller owns pack knowledge
+ *   playSpeedMs -- initial milliseconds per step for playback (see setSpeed)
  * @returns {{update: Function, destroy: Function, el: HTMLElement}}
  */
 export function createTopology(parent, topo, opts = {}) {
@@ -205,7 +228,7 @@ export function createTopology(parent, topo, opts = {}) {
     const model = edge.column.split('.')[0];
     const color = categoryColor((nodeById.get(model) || {}).category);
     const flow = el('path', {
-      class: 'topo-edge-flow', d: geo.d, stroke: color, 'stroke-dasharray': '10 8',
+      class: 'topo-edge-flow', d: geo.d, stroke: color, 'stroke-dasharray': DOT_PATTERN,
     });
     const arrow = el('path', {
       class: 'topo-arrow', d: 'M -7 -5 L 7 0 L -7 5 z', fill: color,
@@ -313,16 +336,28 @@ export function createTopology(parent, topo, opts = {}) {
   bar.append(playBtn, slider, clock);
   card.append(bar);
 
-  // --- the asset panel ----------------------------------------------------
-  const detail = document.createElement('div');
-  detail.className = 'topo-detail hidden';
-  card.append(detail);
+  // --- the asset popover --------------------------------------------------
+  // Anchored beside the asset it describes rather than stacked underneath: as
+  // a network grows, a panel below the diagram drifts ever further from
+  // whatever was tapped. Plain HTML over the SVG, so its text keeps one size
+  // however the diagram is scaled.
+  const pop = document.createElement('div');
+  pop.className = 'topo-pop hidden';
+  pop.setAttribute('role', 'dialog');
+
+  const popArrow = document.createElement('span');
+  popArrow.className = 'topo-pop-arrow';
+  const popBody = document.createElement('div');
+  popBody.className = 'topo-pop-body';
+  pop.append(popArrow, popBody);
+  card.append(pop);
 
   const hint = document.createElement('p');
   hint.className = 'topo-hint';
   hint.textContent =
-    'Arrows and dashes follow each power flow — thicker and faster is more. ' +
-    'Drag the slider to any moment of the day, or tap an asset for its settings.';
+    'Arrows and dots follow each power flow — thicker and faster is more. ' +
+    'Drag the slider to any moment of the day, or tap an asset to read and ' +
+    'change its settings.';
   card.append(hint);
 
   parent.append(card);
@@ -333,9 +368,19 @@ export function createTopology(parent, topo, opts = {}) {
   let maxAbs = new Map();  // column -> largest |value| seen, for normalising
   let index = 0;           // row on display
   let live = true;         // follow the newest row as the run appends
-  let selected = null;     // node id whose panel is open
+  let selected = null;     // node id whose popover is open
+  let popParts = null;     // live handles into the open popover, for refreshes
+  let inputsDisabled = false;
   let playTimer = null;
   let announced;           // last index handed to onCursor
+  // The automatic replay after a run finishes animates the diagram alone: it
+  // must not drag the charts and table away from whatever moment they were
+  // showing (the finished run's last step, or wherever the user had scrubbed
+  // to) just because nobody has touched the page yet.
+  let silent = false;
+  // Milliseconds per step, for both manual play and the automatic replay --
+  // adjustable live from the Options popover via `setSpeed`.
+  let playStepMs = Number(opts.playSpeedMs) || DEFAULT_PLAY_STEP_MS;
 
   const reducedMotion = typeof matchMedia === 'function'
     && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -359,75 +404,198 @@ export function createTopology(parent, topo, opts = {}) {
     return applyFormat(spec.fmt, value === null || !spec.abs ? value : Math.abs(value));
   }
 
-  /** Open, switch or close the asset panel. */
+  /** Open, switch or close the asset popover. */
   function select(nodeId) {
     selected = selected === nodeId ? null : nodeId;
     for (const [id, chip] of chipByNode) chip.classList.toggle('is-selected', id === selected);
-    renderDetail();
+    if (selected) buildPop(selected);
+    else closePop();
   }
 
-  function renderDetail() {
-    detail.replaceChildren();
-    detail.classList.toggle('hidden', !selected);
-    if (!selected) return;
+  function closePop() {
+    pop.classList.add('hidden');
+    popParts = null;
+  }
 
-    const info = opts.detailsFor ? opts.detailsFor(selected, currentRow()) : null;
-    if (!info) {
-      detail.classList.add('hidden');
+  /* SVG user units -> pixels inside the card, honouring the letterboxing that
+   * preserveAspectRatio="xMidYMid meet" applies once max-height clamps the
+   * diagram. Returns null when nothing has been laid out yet (jsdom, or a card
+   * that is still hidden), which callers treat as "park it in the corner". */
+  function svgToCard(x, y) {
+    if (typeof svg.getBoundingClientRect !== 'function') return null;
+    const sr = svg.getBoundingClientRect();
+    const cr = card.getBoundingClientRect();
+    if (!sr.width || !sr.height) return null;
+    const scale = Math.min(sr.width / width, sr.height / height);
+    if (!Number.isFinite(scale) || scale <= 0) return null;
+    return {
+      x: sr.left + (sr.width - width * scale) / 2 + (x - minX) * scale - cr.left,
+      y: sr.top + (sr.height - height * scale) / 2 + (y - minY) * scale - cr.top,
+      scale,
+    };
+  }
+
+  /** Place the popover beside its node, flipped to whichever side has room. */
+  function positionPop(nodeId) {
+    const node = nodeById.get(nodeId);
+    if (!node) return;
+    const anchor = svgToCard(node.position[0], node.position[1]);
+    const cw = card.clientWidth;
+    const ch = card.clientHeight;
+    const pw = pop.offsetWidth || 260;
+    const ph = pop.offsetHeight || 200;
+
+    if (!anchor || !cw || !ch) {
+      pop.style.left = '12px';
+      pop.style.top = '12px';
+      pop.dataset.side = 'none';
+      popArrow.style.top = '';
+      popArrow.style.left = '';
       return;
     }
 
+    const clear = NODE_RADIUS * anchor.scale + 14;
+    let side = 'right';
+    let left = anchor.x + clear;
+    if (left + pw > cw - 8) { side = 'left'; left = anchor.x - clear - pw; }
+    if (left < 8) {
+      side = 'below';
+      left = Math.min(Math.max(8, anchor.x - pw / 2), Math.max(8, cw - pw - 8));
+    }
+    let top = side === 'below' ? anchor.y + clear : anchor.y - ph / 2;
+    top = Math.max(8, Math.min(top, Math.max(8, ch - ph - 8)));
+
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(top)}px`;
+    pop.dataset.side = side;
+    // Keep the little pointer aimed at the chip even after clamping.
+    if (side === 'below') {
+      popArrow.style.left = `${Math.round(Math.max(14, Math.min(anchor.x - left, pw - 14)))}px`;
+      popArrow.style.top = '';
+    } else {
+      popArrow.style.top = `${Math.round(Math.max(14, Math.min(anchor.y - top, ph - 14)))}px`;
+      popArrow.style.left = '';
+    }
+  }
+
+  /** Build the popover for one node. Rebuilt only on selection, never per
+   *  frame -- a rebuild mid-drag would drop the slider the user is holding. */
+  function buildPop(nodeId) {
+    const info = opts.detailsFor ? opts.detailsFor(nodeId, currentRow()) : null;
+    if (!info) {
+      selected = null;
+      for (const chip of chipByNode.values()) chip.classList.remove('is-selected');
+      closePop();
+      return;
+    }
+
+    popBody.replaceChildren();
+    const parts = { nodeId, readings: [], editors: new Map(), heading: null, note: null };
+
     const head = document.createElement('div');
-    head.className = 'topo-detail-head';
+    head.className = 'topo-pop-head';
     const title = document.createElement('strong');
     title.textContent = info.title;
     head.append(title);
     if (info.subtitle) {
       const type = document.createElement('span');
-      type.className = 'topo-detail-type';
+      type.className = 'topo-pop-type';
       type.textContent = info.subtitle;
       head.append(type);
     }
     const close = document.createElement('button');
     close.type = 'button';
-    close.className = 'topo-detail-close';
+    close.className = 'topo-pop-close';
     close.setAttribute('aria-label', 'Close');
     close.textContent = '×';
-    close.addEventListener('click', () => select(selected));
+    close.addEventListener('click', () => select(nodeId));
     head.append(close);
-    detail.append(head);
+    popBody.append(head);
+    pop.setAttribute('aria-label', `${info.title}: settings and readings`);
 
-    const columns = document.createElement('div');
-    columns.className = 'topo-detail-cols';
-    const row = currentRow();
-    const groups = [
-      ['Settings', info.settings, 'No settings of its own.'],
-      [row ? `At ${clockOf(row[0])}` : 'Readings', info.readings, 'Run the simulation to see values.'],
-    ];
-    for (const [name, entries, empty] of groups) {
-      const block = document.createElement('div');
-      const label = document.createElement('h4');
-      label.textContent = name;
-      block.append(label);
-      if (!entries || !entries.length) {
-        const none = document.createElement('p');
-        none.className = 'topo-detail-empty';
-        none.textContent = empty;
-        block.append(none);
-      } else {
-        const list = document.createElement('dl');
-        for (const entry of entries) {
-          const term = document.createElement('dt');
-          term.textContent = entry.label;
-          const value = document.createElement('dd');
-          value.textContent = entry.value;
-          list.append(term, value);
-        }
-        block.append(list);
+    // Settings: editable here, which is the only place they can be changed.
+    const settingsBlock = document.createElement('div');
+    settingsBlock.className = 'topo-pop-block';
+    const settingsLabel = document.createElement('h4');
+    settingsLabel.textContent = 'Settings';
+    settingsBlock.append(settingsLabel);
+
+    const editable = info.controls || [];
+    if (!editable.length) {
+      const none = document.createElement('p');
+      none.className = 'topo-pop-empty';
+      none.textContent = 'No settings of its own.';
+      settingsBlock.append(none);
+    } else {
+      for (const entry of editable) {
+        const editor = buildCompactControl(entry.control, entry.value,
+          (id, value) => {
+            if (opts.onEdit) opts.onEdit(id, value);
+          });
+        editor.setDisabled(inputsDisabled);
+        parts.editors.set(entry.control.id, editor);
+        settingsBlock.append(editor.el);
       }
-      columns.append(block);
     }
-    detail.append(columns);
+
+    const note = document.createElement('p');
+    note.className = 'topo-pop-note';
+    note.textContent = info.note || '';
+    note.classList.toggle('hidden', !info.note);
+    settingsBlock.append(note);
+    parts.note = note;
+    popBody.append(settingsBlock);
+
+    // Readings at the selected timestep.
+    const readBlock = document.createElement('div');
+    readBlock.className = 'topo-pop-block';
+    const readLabel = document.createElement('h4');
+    const row = currentRow();
+    readLabel.textContent = row ? `At ${clockOf(row[0])}` : 'Readings';
+    parts.heading = readLabel;
+    readBlock.append(readLabel);
+
+    const readings = info.readings || [];
+    if (!readings.length) {
+      const none = document.createElement('p');
+      none.className = 'topo-pop-empty';
+      none.textContent = 'Run the simulation to see values.';
+      readBlock.append(none);
+    } else {
+      const list = document.createElement('dl');
+      for (const entry of readings) {
+        const term = document.createElement('dt');
+        term.textContent = entry.label;
+        const value = document.createElement('dd');
+        value.textContent = entry.value;
+        list.append(term, value);
+        parts.readings.push(value);
+      }
+      readBlock.append(list);
+    }
+    popBody.append(readBlock);
+
+    popParts = parts;
+    pop.classList.remove('hidden');
+    positionPop(nodeId);
+  }
+
+  /** Refresh the numbers in an open popover, leaving its inputs untouched. */
+  function refreshPop() {
+    if (!popParts || !selected) return;
+    const info = opts.detailsFor ? opts.detailsFor(selected, currentRow()) : null;
+    if (!info) { closePop(); return; }
+
+    const readings = info.readings || [];
+    if (readings.length !== popParts.readings.length) { buildPop(selected); return; }
+    readings.forEach((entry, i) => { popParts.readings[i].textContent = entry.value; });
+
+    const row = currentRow();
+    if (popParts.heading) popParts.heading.textContent = row ? `At ${clockOf(row[0])}` : 'Readings';
+    if (popParts.note) {
+      popParts.note.textContent = info.note || '';
+      popParts.note.classList.toggle('hidden', !info.note);
+    }
   }
 
   /** Redraw badges, flows and the scrubber for the current row. */
@@ -443,7 +611,7 @@ export function createTopology(parent, topo, opts = {}) {
       }
       for (const { fill } of barViews) fill.setAttribute('width', '0');
       clock.textContent = '—';
-      renderDetail();
+      refreshPop();
       if (announced !== null && opts.onCursor) opts.onCursor(null);
       announced = null;
       return;
@@ -473,16 +641,19 @@ export function createTopology(parent, topo, opts = {}) {
 
       const on = view.norm >= FLOW_FLOOR;
       view.flow.setAttribute('stroke-opacity', on ? '0.9' : '0');
-      view.flow.setAttribute('stroke-width', String(2 + 4.5 * view.norm));
+      view.flow.setAttribute('stroke-width',
+        String(DOT_MIN_WIDTH + (DOT_MAX_WIDTH - DOT_MIN_WIDTH) * view.norm));
       view.arrow.setAttribute('fill-opacity', on ? '0.95' : '0');
       const flip = value < 0 ? 180 : 0;
       view.arrow.setAttribute('transform',
         `translate(${view.geo.mid.x}, ${view.geo.mid.y}) rotate(${view.geo.angle + flip})`);
     }
 
-    renderDetail();
-    if (announced !== index && opts.onCursor) opts.onCursor(index);
-    announced = index;
+    refreshPop();
+    if (!silent) {
+      if (announced !== index && opts.onCursor) opts.onCursor(index);
+      announced = index;
+    }
   }
 
   // --- dash animation ------------------------------------------------------
@@ -501,7 +672,7 @@ export function createTopology(parent, topo, opts = {}) {
     for (const view of flowViews) {
       if (view.norm < FLOW_FLOOR) continue;
       any = true;
-      const speed = 14 + 60 * view.norm;                  // svg units per second
+      const speed = 8 + 34 * view.norm;                   // svg units per second
       view.offset -= Math.sign(view.value) * speed * dt;
       view.flow.setAttribute('stroke-dashoffset', String(view.offset));
     }
@@ -520,22 +691,30 @@ export function createTopology(parent, topo, opts = {}) {
   function stopPlaying() {
     clearInterval(playTimer);
     playTimer = null;
+    silent = false;
     playBtn.textContent = '▶';
     playBtn.setAttribute('aria-label', 'Play the day');
   }
 
-  function startPlaying() {
+  function advanceFrame() {
+    index = index + 1 >= rowCount() ? 0 : index + 1;
+    renderFrame();
+    ensureAnimating();
+  }
+
+  /** Play from the current position, wrapping back to the start at the end
+   *  instead of stopping -- so a run can be left to replay unattended.
+   *  `quiet` is set only for the automatic post-run replay: it animates the
+   *  diagram without moving the shared cursor the charts and table follow. */
+  function startPlaying(quiet = false) {
     if (rowCount() === 0) return;
     if (index >= rowCount() - 1) index = 0;   // replay from the start
     live = false;
+    silent = quiet;
     playBtn.textContent = '⏸';
     playBtn.setAttribute('aria-label', 'Pause');
-    playTimer = setInterval(() => {
-      index += 1;
-      if (index >= rowCount() - 1) stopPlaying();
-      renderFrame();
-      ensureAnimating();
-    }, PLAY_STEP_MS);
+    clearInterval(playTimer);
+    playTimer = setInterval(advanceFrame, playStepMs);
   }
 
   playBtn.addEventListener('click', () => (playTimer ? stopPlaying() : startPlaying()));
@@ -548,6 +727,20 @@ export function createTopology(parent, topo, opts = {}) {
     renderFrame();
     ensureAnimating();
   });
+
+  // A tap anywhere that is not the popover or another asset closes it.
+  function onDocPointer(event) {
+    if (!selected || pop.contains(event.target)) return;
+    const target = event.target;
+    if (target && typeof target.closest === 'function' && target.closest('.topo-node')) return;
+    select(selected);
+  }
+  document.addEventListener('pointerdown', onDocPointer);
+
+  function onViewportChange() {
+    if (selected) positionPop(selected);
+  }
+  window.addEventListener('resize', onViewportChange);
 
   renderFrame();   // start idle: flows off, badges dashed, scrubber hidden
 
@@ -587,6 +780,26 @@ export function createTopology(parent, topo, opts = {}) {
       ensureAnimating();
     },
 
+    /** Grey out the popover's inputs while a run is in flight. */
+    setDisabled(disabled) {
+      inputsDisabled = Boolean(disabled);
+      if (!popParts) return;
+      for (const editor of popParts.editors.values()) editor.setDisabled(inputsDisabled);
+    },
+
+    /** Push changed settings back into an open popover (after a reset). */
+    syncControls(values) {
+      if (!popParts) return;
+      for (const [id, editor] of popParts.editors) {
+        if (values && Object.prototype.hasOwnProperty.call(values, id)) editor.sync(values[id]);
+      }
+    },
+
+    /** Re-read the details for the open asset without rebuilding its inputs. */
+    refreshDetails() {
+      refreshPop();
+    },
+
     /** Move the selected timestep from outside (the results table). */
     setCursor(next) {
       if (rowCount() === 0) return;
@@ -597,10 +810,39 @@ export function createTopology(parent, topo, opts = {}) {
       ensureAnimating();
     },
 
+    /** A run just finished: rewind to the start of the day and replay it on
+     *  a loop, at the configured speed, rather than leaving the diagram
+     *  parked on the last moment simulated. Quiet, so the charts and table
+     *  are undisturbed -- any manual scrub or play/pause click takes the
+     *  shared cursor over from there as usual. */
+    finish() {
+      if (rowCount() === 0) return;
+      index = 0;
+      live = false;
+      silent = true;
+      renderFrame();
+      startPlaying(true);
+    },
+
+    /** Change how fast playback runs, in milliseconds per step -- from the
+     *  Options popover. Takes effect immediately, including mid-replay,
+     *  without losing the current position or pausing. */
+    setSpeed(ms) {
+      const next = Number(ms);
+      if (!Number.isFinite(next) || next <= 0) return;
+      playStepMs = next;
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = setInterval(advanceFrame, playStepMs);
+      }
+    },
+
     destroy() {
       stopPlaying();
       if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = null;
+      document.removeEventListener('pointerdown', onDocPointer);
+      window.removeEventListener('resize', onViewportChange);
       card.remove();
     },
   };

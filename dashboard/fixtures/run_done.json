@@ -1,5 +1,5 @@
 {
-  "id": "20260911-213951-power_balance-res_battery",
+  "id": "20260925-153030-power_balance-res_battery",
   "pack": "power_balance",
   "case": "res_battery",
   "title": "Power Balancing for a Local Community - With renewables and a battery",
@@ -8,9 +8,9 @@
   "progress": 1.0,
   "rows": 95,
   "expected_steps": 95,
-  "created_at": "2026-09-11T21:39:51",
-  "started_at": "2026-09-11T21:39:51",
-  "finished_at": "2026-09-11T21:39:52",
+  "created_at": "2026-09-25T15:30:30",
+  "started_at": "2026-09-25T15:30:30",
+  "finished_at": "2026-09-25T15:30:31",
   "error": null,
   "exit_code": null,
   "settings": {

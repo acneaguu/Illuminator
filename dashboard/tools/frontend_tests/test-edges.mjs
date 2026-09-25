@@ -1,4 +1,4 @@
-/* Failure paths, mock mode, and the column-order defence. */
+/* Failure paths, the pack switcher, mock mode, and the column-order defence. */
 import { boot, tick } from './harness.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,6 +31,11 @@ console.log('=== 1. simulation fails ===');
     'GET /api/runs/{id}/results': () => ({ ...live.results_full, rows: [], total: 0, next: 0 }),
   }});
   await selectBatteryCase(doc, loadModule);
+  // No topology route is stubbed here, so the diagram never mounts and the
+  // settings panel has to keep every control rather than hand them to assets.
+  check('without a diagram the panel keeps every setting',
+    doc.querySelectorAll('#controls .control').length > 0,
+    `${doc.querySelectorAll('#controls .control').length} rendered`);
   doc.getElementById('run-btn').click();
   await tick(500);
 
@@ -136,8 +141,85 @@ console.log('=== 4. results arrive in a different column order ===');
     `shown=${JSON.stringify(shown)}`);
 }
 
-/* --------------------------------------------------------- 5. mock mode */
-console.log('=== 5. mock mode (?mock=1, fixtures off disk) ===');
+/* ------------------------------------------------------ 5. several packs */
+console.log('=== 5. a second pack brings up the tutorial switcher ===');
+{
+  const second = { ...live.packs.packs[0], id: 'power_reserve', title: 'Power Reserve' };
+  const routes = {
+    'GET /api/packs': () => ({ packs: [live.packs.packs[0], second] }),
+    'GET /api/packs/{p}/cases/{c}/baseline': () => live.baseline,
+    'GET /api/packs/{p}/cases/{c}/topology': () => live.topology,
+  };
+
+  const { doc, window, loadModule } = await boot({ routes });
+  await loadModule('app.js');
+  await tick(60);
+
+  const switcher = doc.getElementById('pack-switch');
+  check('switcher shown with two packs', !switcher.classList.contains('hidden'));
+  const buttons = [...switcher.querySelectorAll('.pack-btn')];
+  check('one button per pack', buttons.length === 2,
+    JSON.stringify(buttons.map((b) => b.textContent)));
+  check('the first pack starts selected', buttons[0].getAttribute('aria-pressed') === 'true' &&
+    doc.getElementById('pack-title').textContent === live.packs.packs[0].title);
+
+  buttons[1].click();
+  await tick(60);
+  check('switching packs renames the page',
+    doc.getElementById('pack-title').textContent === 'Power Reserve',
+    doc.getElementById('pack-title').textContent);
+  check('the switcher follows the selection',
+    buttons[1].getAttribute('aria-pressed') === 'true' &&
+    buttons[0].getAttribute('aria-pressed') === 'false');
+  check('the cases are the new pack\'s tabs',
+    doc.querySelectorAll('.tab').length === second.cases.length &&
+    doc.querySelector('.tab').getAttribute('aria-selected') === 'true');
+  check('the URL remembers the tutorial', window.location.search.includes('pack=power_reserve'),
+    window.location.search);
+
+  // A shared link (or a reload) lands on the same tutorial.
+  const deep = await boot({ routes, query: 'pack=power_reserve' });
+  await deep.loadModule('app.js');
+  await tick(60);
+  check('?pack= deep-links straight to it',
+    deep.doc.getElementById('pack-title').textContent === 'Power Reserve',
+    deep.doc.getElementById('pack-title').textContent);
+}
+
+/* ------------------------------------------------ 6. leaving a case mid-run */
+console.log('=== 6. switching case while a run is in flight ===');
+{
+  const { doc, loadModule } = await boot({ routes: {
+    'GET /api/packs': () => live.packs,
+    'GET /api/packs/{p}/cases/{c}/baseline': () => live.baseline,
+    'GET /api/packs/{p}/cases/{c}/topology': () => live.topology,
+    'POST /api/runs': () => ({ ...live.created, state: 'queued' }),
+    // Never finishes, so the page is still in its running state when we leave.
+    'GET /api/runs/{id}': () => ({ ...live.status_done, state: 'running',
+                                   rows: 12, progress: 0.12, error: null }),
+    'GET /api/runs/{id}/results': () => ({ ...live.results_full,
+      rows: live.results_full.rows.slice(0, 12), total: 12, next: 12 }),
+  }});
+  await selectBatteryCase(doc, loadModule);
+  doc.getElementById('run-btn').click();
+  await tick(500);
+  check('Simulate is disabled while the run is in flight',
+    doc.getElementById('run-btn').disabled);
+
+  // Leave the case. The run carries on server-side, but this view of it ends.
+  [...doc.querySelectorAll('.tab')][1].click();
+  await tick(60);
+  check('Simulate is usable again after leaving', !doc.getElementById('run-btn').disabled);
+  check('and reads Simulate, not Simulating…',
+    doc.getElementById('run-btn').textContent === 'Simulate',
+    doc.getElementById('run-btn').textContent);
+  check('the progress bar is put away', doc.getElementById('progress').classList.contains('hidden'));
+  check('Stop is put away too', doc.getElementById('cancel-btn').classList.contains('hidden'));
+  check('the day picker is editable again', !doc.getElementById('day-input').disabled);
+}
+
+/* --------------------------------------------------------- 7. mock mode */
+console.log('=== 7. mock mode (?mock=1, fixtures off disk) ===');
 {
   const { doc, requests, loadModule, consoleMessages } = await boot({ routes: {}, mock: true });
   await loadModule('app.js');

@@ -15,9 +15,21 @@ const POLL_MS = 400;
 /** Debounce for dataset views, which refetch as a slider moves. */
 const BASELINE_DEBOUNCE_MS = 220;
 
+/** The diagram's replay speed, as the Options slider's ten notches (slow to
+ *  fast) in milliseconds per step. Applies to both manual play and the
+ *  automatic replay once a run finishes -- see topology.js's `setSpeed`. */
+const SPEED_STEP_MS = [900, 750, 620, 500, 400, 320, 260, 210, 160, 110];
+const DEFAULT_SPEED_LEVEL = 6;
+
+function speedMsFor(level) {
+  const clamped = Math.max(1, Math.min(SPEED_STEP_MS.length, Number(level) || DEFAULT_SPEED_LEVEL));
+  return SPEED_STEP_MS[clamped - 1];
+}
+
 const el = {
   packTitle: document.getElementById('pack-title'),
   packSubtitle: document.getElementById('pack-subtitle'),
+  packSwitch: document.getElementById('pack-switch'),
   statusPill: document.getElementById('status-pill'),
   mockBadge: document.getElementById('mock-badge'),
   tabs: document.getElementById('case-tabs'),
@@ -26,11 +38,16 @@ const el = {
   dayPresets: document.getElementById('day-presets'),
   dayInput: document.getElementById('day-input'),
   controlsHeading: document.getElementById('controls-heading'),
+  controlsHint: document.getElementById('controls-hint'),
   controls: document.getElementById('controls'),
   notes: document.getElementById('notes'),
   runBtn: document.getElementById('run-btn'),
   cancelBtn: document.getElementById('cancel-btn'),
   resetBtn: document.getElementById('reset-btn'),
+  optionsBtn: document.getElementById('options-btn'),
+  optionsPop: document.getElementById('options-pop'),
+  speedRange: document.getElementById('speed-range'),
+  speedReadout: document.getElementById('speed-readout'),
   progress: document.getElementById('progress'),
   progressBar: document.getElementById('progress-bar'),
   progressLabel: document.getElementById('progress-label'),
@@ -44,6 +61,7 @@ const el = {
 };
 
 const state = {
+  packs: [],
   pack: null,
   caseDef: null,
   day: null,
@@ -65,6 +83,9 @@ const state = {
   pollTimer: null,
   baselineTimer: null,
   baselineToken: 0,
+  // A viewing preference, not a simulation setting: kept across case switches
+  // and Reset, unlike everything above.
+  playSpeedLevel: DEFAULT_SPEED_LEVEL,
 };
 
 /* ---------------------------------------------------------------- status */
@@ -123,16 +144,13 @@ async function init() {
 
   try {
     const payload = await api.packs();
-    const pack = payload.packs[0];
-    if (!pack) throw new Error('the backend returned no packs');
-    state.pack = pack;
+    state.packs = payload.packs || [];
+    if (!state.packs.length) throw new Error('the backend returned no packs');
 
-    el.packTitle.textContent = pack.title;
-    el.packSubtitle.textContent = pack.subtitle || '';
-    document.title = `${pack.title} — Illuminator`;
-
-    buildTabs(pack);
-    selectCase(pack.cases[0]);
+    buildPackSwitch(state.packs);
+    // ?pack=<id> deep-links a tutorial; otherwise the first one.
+    const wanted = new URLSearchParams(location.search).get('pack');
+    applyPack(state.packs.find((pack) => pack.id === wanted) || state.packs[0]);
     setStatus('idle');
   } catch (error) {
     setStatus('error');
@@ -144,11 +162,93 @@ async function init() {
   el.runBtn.addEventListener('click', startRun);
   el.cancelBtn.addEventListener('click', cancelRun);
   el.resetBtn.addEventListener('click', resetToDefaults);
+  initOptions();
+}
+
+/* -------------------------------------------------------- playback options */
+
+/** The Options popover: currently just the diagram's replay speed, but its
+ *  own button rather than folded into Reset since it is a viewing
+ *  preference -- unlike Reset, it must survive a Reset. */
+function initOptions() {
+  el.speedRange.value = String(state.playSpeedLevel);
+  updateSpeedReadout();
+
+  el.optionsBtn.addEventListener('click', () => {
+    setOptionsOpen(el.optionsPop.classList.contains('hidden'));
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (el.optionsPop.classList.contains('hidden')) return;
+    if (el.optionsPop.contains(event.target) || el.optionsBtn.contains(event.target)) return;
+    setOptionsOpen(false);
+  });
+  el.speedRange.addEventListener('input', () => {
+    state.playSpeedLevel = Number(el.speedRange.value);
+    updateSpeedReadout();
+    if (state.topo) state.topo.setSpeed(speedMsFor(state.playSpeedLevel));
+  });
+}
+
+function setOptionsOpen(open) {
+  el.optionsPop.classList.toggle('hidden', !open);
+  el.optionsBtn.setAttribute('aria-expanded', String(open));
+}
+
+function updateSpeedReadout() {
+  const stepsPerSecond = 1000 / speedMsFor(state.playSpeedLevel);
+  el.speedReadout.textContent = `${stepsPerSecond.toFixed(1)} steps per second`;
 }
 
 function describe(error) {
   if (error instanceof ApiError) return error.message;
   return error && error.message ? error.message : String(error);
+}
+
+/* ------------------------------------------------------------------ packs */
+
+/** Make a pack the one on screen: title, tabs, and its first case. */
+function applyPack(pack) {
+  state.pack = pack;
+  el.packTitle.textContent = pack.title;
+  el.packSubtitle.textContent = pack.subtitle || '';
+  document.title = `${pack.title} — Illuminator`;
+  syncPackSwitch();
+  buildTabs(pack);
+  selectCase(pack.cases[0]);
+}
+
+/** A switch made by the user: also record it in the URL, so a reload (or a
+ *  shared link) lands on the same tutorial. */
+function selectPack(pack) {
+  if (state.pack && pack.id === state.pack.id) return;
+  applyPack(pack);
+  const url = new URL(location.href);
+  url.searchParams.set('pack', pack.id);
+  history.replaceState(null, '', url);
+}
+
+/** One button per tutorial, in the top bar. Hidden with a single pack: the
+ *  brand title already names it. */
+function buildPackSwitch(packs) {
+  el.packSwitch.replaceChildren();
+  el.packSwitch.classList.toggle('hidden', packs.length < 2);
+  if (packs.length < 2) return;
+  for (const pack of packs) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pack-btn';
+    button.textContent = pack.title;
+    button.dataset.pack = pack.id;
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => selectPack(pack));
+    el.packSwitch.append(button);
+  }
+}
+
+function syncPackSwitch() {
+  for (const button of el.packSwitch.querySelectorAll('.pack-btn')) {
+    button.setAttribute('aria-pressed', String(button.dataset.pack === state.pack.id));
+  }
 }
 
 function buildTabs(pack) {
@@ -176,6 +276,10 @@ function syncTabs() {
 
 function selectCase(caseDef) {
   stopPolling();
+  // Leaving a case mid-run abandons the view of it, so the controls must come
+  // back out of their running state -- the run itself carries on server-side,
+  // and pressing Simulate again offers to stop it.
+  setRunning(false);
   state.caseDef = caseDef;
   state.runId = null;
   state.runState = 'idle';
@@ -203,13 +307,11 @@ function selectCase(caseDef) {
   el.progress.classList.add('hidden');
 
   el.description.textContent = caseDef.description || '';
-  el.controlsHeading.textContent = caseDef.kind === 'dataset' ? 'Neighbourhood' : 'Settings';
+  el.controlsHeading.textContent = caseDef.controls_heading || 'Settings';
 
   renderDayPicker(el.dayPresets, el.dayInput, caseDef.day, state.day, onDayChange);
 
-  const allControls = [...caseDef.controls, ...caseDef.states];
-  state.controlsHandle = renderControls(el.controls, allControls, { ...state.settings, ...state.states },
-    onControlChange);
+  renderSettingsPanel();
 
   const isDataset = caseDef.kind === 'dataset';
   el.runBtn.classList.toggle('hidden', isDataset);
@@ -221,6 +323,69 @@ function selectCase(caseDef) {
   setStatus('idle');
 
   if (isDataset) loadBaseline();
+}
+
+/**
+ * The controls one asset owns: a setting whose target writes that model, or a
+ * state declared on it. The single definition of "belongs to this node",
+ * shared by the diagram's popover and by the panel that holds the remainder.
+ */
+function controlsOfNode(nodeId) {
+  const caseDef = state.caseDef || {};
+  const owned = [];
+  for (const control of caseDef.controls || []) {
+    if ((control.targets || []).some((target) => target.model === nodeId)) owned.push(control);
+  }
+  for (const control of caseDef.states || []) {
+    if (control.model === nodeId) owned.push(control);
+  }
+  return owned;
+}
+
+/** A control's current value, wherever it lives. */
+function liveValueOf(control) {
+  return Object.prototype.hasOwnProperty.call(state.states, control.id)
+    ? state.states[control.id]
+    : state.settings[control.id];
+}
+
+/**
+ * Fill the settings panel.
+ *
+ * Anything an asset owns is edited in the diagram, on the asset itself, so the
+ * panel keeps only what no asset claims -- and everything, when there is no
+ * diagram to put it on (a dataset view, or a topology that failed to load).
+ */
+function renderSettingsPanel() {
+  const caseDef = state.caseDef;
+  if (!caseDef) return;
+
+  const all = [...(caseDef.controls || []), ...(caseDef.states || [])];
+  const onDiagram = new Set();
+  if (state.topo) {
+    for (const node of (state.topoPayload && state.topoPayload.nodes) || []) {
+      for (const control of controlsOfNode(node.id)) onDiagram.add(control.id);
+    }
+  }
+  const remaining = all.filter((control) => !onDiagram.has(control.id));
+
+  if (onDiagram.size && !remaining.length) {
+    // Every setting lives on the diagram: an empty list here would otherwise
+    // claim the view has none at all.
+    el.controls.replaceChildren();
+    state.controlsHandle = { setDisabled() {} };
+  } else {
+    state.controlsHandle = renderControls(el.controls, remaining,
+      { ...state.settings, ...state.states }, onControlChange);
+  }
+  el.controlsHint.classList.toggle('hidden', onDiagram.size === 0);
+}
+
+/** An edit made on the diagram: same path as the panel, plus a redraw so the
+ *  popover's own "changed since this run" note keeps up. */
+function onAssetEdit(id, value) {
+  onControlChange(id, value);
+  if (state.topo) state.topo.refreshDetails();
 }
 
 function onControlChange(id, value) {
@@ -285,7 +450,12 @@ async function loadTopology(caseDef) {
     state.topo = createTopology(el.topologySlot, topo, {
       onCursor: applyCursor,
       detailsFor,
+      onEdit: onAssetEdit,
+      playSpeedMs: speedMsFor(state.playSpeedLevel),
     });
+    // The diagram has taken over its assets' settings; the panel keeps the rest.
+    renderSettingsPanel();
+    if (state.runState === 'running') state.topo.setDisabled(true);
     if (state.results) state.topo.update(state.results);
   } catch (error) {
     console.warn('topology unavailable:', describe(error));
@@ -326,12 +496,6 @@ function formatReading(column, value) {
   return badge ? applyFormat(badge.fmt, value) : Number(value).toFixed(2);
 }
 
-/** The settings behind what is on screen -- the run's, not the sliders'. */
-function shownSettings() {
-  if (state.results && state.lastRun) return state.lastRun;
-  return { settings: state.settings, states: state.states };
-}
-
 /**
  * What the diagram should show when an asset is tapped: the settings that
  * apply to it and its readings at the selected timestep.
@@ -341,19 +505,28 @@ function shownSettings() {
  */
 function detailsFor(nodeId, row) {
   const caseDef = state.caseDef;
-  const source = shownSettings();
 
-  const settings = [];
-  for (const control of caseDef.controls || []) {
-    if (!(control.targets || []).some((target) => target.model === nodeId)) continue;
-    const value = source.settings ? source.settings[control.id] : undefined;
-    if (value !== undefined) settings.push({ label: control.label, value: displayValue(control, value) });
+  // Editors carry the *live* values -- they are what the next run will use.
+  // The results on screen may predate an edit, so say when the two disagree
+  // rather than quietly showing a number the charts do not reflect.
+  const shown = state.results && state.lastRun ? state.lastRun : null;
+  const controls = [];
+  const stale = [];
+  for (const control of controlsOfNode(nodeId)) {
+    const value = liveValueOf(control);
+    if (value === undefined) continue;
+    controls.push({ control, value });
+    if (!shown) continue;
+    const ranWith = Object.prototype.hasOwnProperty.call(state.states, control.id)
+      ? (shown.states || {})[control.id]
+      : (shown.settings || {})[control.id];
+    if (ranWith !== undefined && ranWith !== value) {
+      stale.push(`${control.label} was ${displayValue(control, ranWith)}`);
+    }
   }
-  for (const control of caseDef.states || []) {
-    if (control.model !== nodeId) continue;
-    const value = source.states ? source.states[control.id] : undefined;
-    if (value !== undefined) settings.push({ label: control.label, value: displayValue(control, value) });
-  }
+  const note = stale.length
+    ? `${stale.join('; ')} in the run shown. Press Simulate to use the new value.`
+    : null;
 
   // Columns worth showing for this asset: the ones the diagram already binds to
   // it (a badge, or an edge it sits on), then anything else monitored on it.
@@ -390,8 +563,9 @@ function detailsFor(nodeId, row) {
   return {
     title: node ? node.label : nodeId,
     subtitle: node ? node.type : '',
-    settings,
+    controls,
     readings,
+    note,
   };
 }
 
@@ -409,7 +583,7 @@ async function loadBaseline() {
   try {
     const profile = await api.baseline(state.pack.id, caseDef.id, {
       day: state.day,
-      houses: state.settings.houses,
+      settings: state.settings,
     });
     // A slower earlier request must not overwrite a newer one.
     if (token !== state.baselineToken || state.caseDef.id !== caseDef.id) return;
@@ -744,6 +918,7 @@ function setRunning(running) {
   el.resetBtn.disabled = running;
   el.progress.classList.toggle('hidden', !running);
   if (state.controlsHandle) state.controlsHandle.setDisabled(running);
+  if (state.topo) state.topo.setDisabled(running);
   for (const input of [el.dayInput, ...el.dayPresets.querySelectorAll('button')]) {
     input.disabled = running;
   }
@@ -799,6 +974,9 @@ async function poll() {
     renderPinBar();
     if (status.state === 'done') {
       updateComparison();
+      // Rewind and auto-replay the finished day, rather than leaving the
+      // diagram parked on the last moment simulated.
+      if (state.topo) state.topo.finish();
     } else if (status.state === 'error') {
       const error = status.error || {};
       showError('The simulation failed',

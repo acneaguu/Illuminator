@@ -17,7 +17,7 @@
   },
   "conflict_409": {
     "_status": 409,
-    "detail": "a simulation is already running (20260911-213952-power_balance-res); cancel it or wait for it to finish"
+    "detail": "a simulation is already running (20260925-153031-power_balance-res); cancel it or wait for it to finish"
   },
   "_captured_via": "asgi",
   "_note": "error response shapes; _status is the HTTP code"

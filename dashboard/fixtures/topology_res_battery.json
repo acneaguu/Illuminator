@@ -106,19 +106,6 @@
       "sign": -1.0
     },
     {
-      "from": "Battery1",
-      "to": "Controller1",
-      "attrs": [
-        {
-          "from": "soc",
-          "to": "soc"
-        }
-      ],
-      "time_shifted": false,
-      "column": null,
-      "sign": 1.0
-    },
-    {
       "from": "Controller1",
       "to": "Battery1",
       "attrs": [

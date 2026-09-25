@@ -27,9 +27,12 @@ cases:
       The neighbourhood's electricity demand for one day, and which sources the
       national grid mix uses to meet it. No local generation yet.
     kind: dataset
+    controls_heading: "Neighbourhood"
     baseline:
       file: load_data.txt
       value_column: load
+      # The control whose value scales the profile.
+      scale_by: houses
       # 15-minute data read as power: load * houses * 15/60 (as in functions_T1).
       scale: power
       unit: kW
@@ -293,6 +296,12 @@ cases:
         Battery1.soc: "Battery SOC (%)"
     topology:
       hidden: [CSVload, CSV_pv, CSV_wind]
+      # Battery1 also reports its SOC back to the controller (Battery1.soc ->
+      # Controller1.soc), but everything actually moves over the flow2b/p_out
+      # edge below -- the SOC leg would only draw a second, bowed, do-nothing
+      # line between the same two nodes.
+      hidden_edges:
+        - [Battery1, Controller1]
       positions:
         PV1: [100, 90]
         Wind1: [100, 250]

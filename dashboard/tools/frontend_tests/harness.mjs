@@ -18,7 +18,7 @@ const { JSDOM, VirtualConsole } = require(process.env.JSDOM_PATH || 'jsdom');
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const FE = join(ROOT, 'dashboard/frontend');
 
-export async function boot({ routes = {}, mock = false, quiet = true } = {}) {
+export async function boot({ routes = {}, mock = false, quiet = true, query = '' } = {}) {
   const html = readFileSync(join(FE, 'index.html'), 'utf8');
   const virtualConsole = new VirtualConsole();
   const consoleMessages = [];
@@ -30,8 +30,9 @@ export async function boot({ routes = {}, mock = false, quiet = true } = {}) {
     });
   }
 
+  const search = [mock ? 'mock=1' : '', query].filter(Boolean).join('&');
   const dom = new JSDOM(html, {
-    url: `http://localhost:8000/${mock ? '?mock=1' : ''}`,
+    url: `http://localhost:8000/${search ? `?${search}` : ''}`,
     runScripts: 'dangerously',
     resources: undefined,
     pretendToBeVisual: true,
