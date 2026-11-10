@@ -11,16 +11,15 @@ lives under `dashboard/`.
 
 ## Status
 
-Phases A–C are complete: the backend runs scenarios and the frontend drives
+Phases A–D are complete: the backend runs scenarios and the frontend drives
 them, charts the results, compares two runs and animates the energy system.
-Phase D is not started.
 
 | Phase | Scope | State |
 |---|---|---|
 | A | Backend, Tutorial 1 pack, API contract | **done**, verified end to end |
 | B | Frontend shell: controls, run button, charts, summary table, run comparison | **done**, verified end to end |
 | C | Topology view: icons, animated flows, time scrubber | **done**, verified end to end |
-| D | Tutorial 3 pack: grid congestion, band chart, EV/heat-pump nodes | not started |
+| D | Tutorial 3 pack: grid congestion, band chart, EV/heat-pump nodes | **done**, verified end to end |
 
 ## Setup
 
@@ -148,6 +147,12 @@ Two things the scenario cannot supply, the pack adds:
   arrow (right for the grid and the battery, whose columns are signed), and
   `bar: true` also draws the value as a fill under the icon (the battery's
   state of charge).
+* **`hidden_edges`** — drops a scenario connection from the diagram outright:
+  `[[from, to]]` pairs to omit. For an informational return leg that
+  duplicates a pair already carrying the animated flow (a battery reporting
+  its own state of charge back to the controller, say) — without it, the
+  diagram would bow both edges apart to tell them apart and draw a second,
+  do-nothing line for the one with nothing bound to it.
 
 Flow arrows follow the *realised* quantity wherever the scenario offers a
 choice: the controller-to-battery edge animates `Battery1.p_out`, the power the
@@ -245,7 +250,9 @@ holding the slot.
 
 Everything the dashboard shows for a case comes from a pack file in `packs/`;
 adding a tutorial means adding a pack, not changing code. See
-`packs/power_balance.yaml` for a worked example. A case declares:
+`packs/power_balance.yaml` for a worked example, or `packs/grid_congestion.yaml`
+for one with a real (non-virtual) grid model, `hidden_edges`, a toggle control,
+and the capacity-band chart. A case declares:
 
 * `scenario` — the Illuminator YAML to run (`kind: simulation`), or `baseline` —
   a data file to read directly (`kind: dataset`, no engine involved). A

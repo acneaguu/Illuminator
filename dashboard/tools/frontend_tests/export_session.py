@@ -31,8 +31,15 @@ def main() -> int:
                 raise RuntimeError(f"GET {path} -> {status}: {payload}")
             return payload
 
+        # Restricted to power_balance: the tests below hard-code its case
+        # order (base/res/res_battery), and a second real pack -- Grid
+        # Congestion -- would otherwise change which one sorts first. The
+        # pack switcher itself is exercised separately, with a synthetic
+        # second pack (test-edges.mjs, "a second pack brings up the tutorial
+        # switcher").
+        all_packs = get("/api/packs")
         session = {
-            "packs": get("/api/packs"),
+            "packs": {"packs": [p for p in all_packs["packs"] if p["id"] == "power_balance"]},
             "baseline": get("/api/packs/power_balance/cases/base/baseline",
                             "day=2012-06-01&houses=5"),
             "topology": get("/api/packs/power_balance/cases/res_battery/topology"),

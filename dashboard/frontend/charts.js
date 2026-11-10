@@ -34,6 +34,35 @@ function colourFor(series, index) {
   return series.color || PALETTE[index % PALETTE.length];
 }
 
+/** Green / amber / red capacity bands, shared by every chart kind that takes
+ *  a `bands` option -- the grid-congestion charts' defining feature: a flow
+ *  shaded by how much of the connection's capacity it uses, symmetric around
+ *  zero because the same physical limit caps import and export alike. */
+function paintCapacityBands(u, bands) {
+  if (!bands || !Number.isFinite(bands.cap)) return;
+  const { ctx } = u;
+  const { cap, tol = 0.67, crit = 0.9 } = bands;
+  const regions = [
+    [-cap * tol, cap * tol, 'rgba(218, 242, 208, 0.85)'],
+    [cap * tol, cap * crit, 'rgba(255, 232, 162, 0.8)'],
+    [-cap * crit, -cap * tol, 'rgba(255, 232, 162, 0.8)'],
+    [cap * crit, cap, 'rgba(240, 46, 49, 0.35)'],
+    [-cap, -cap * crit, 'rgba(240, 46, 49, 0.35)'],
+  ];
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height);
+  ctx.clip();
+  for (const [lo, hi, fill] of regions) {
+    const yHi = u.valToPos(hi, 'y', true);
+    const yLo = u.valToPos(lo, 'y', true);
+    if (!Number.isFinite(yHi) || !Number.isFinite(yLo)) continue;
+    ctx.fillStyle = fill;
+    ctx.fillRect(u.bbox.left, yHi, u.bbox.width, yLo - yHi);
+  }
+  ctx.restore();
+}
+
 /* ------------------------------------------------------------ formatting */
 
 function formatNumber(value, places = 2) {
@@ -217,30 +246,8 @@ export function createChart(parent, spec, opts = {}) {
     ctx.restore();
   }
 
-  /** Green / amber / red capacity bands, used by the grid-congestion charts. */
   function drawBands(u) {
-    if (!bands || !Number.isFinite(bands.cap)) return;
-    const { ctx } = u;
-    const { cap, tol = 0.67, crit = 0.9 } = bands;
-    const regions = [
-      [-cap * tol, cap * tol, 'rgba(218, 242, 208, 0.85)'],
-      [cap * tol, cap * crit, 'rgba(255, 232, 162, 0.8)'],
-      [-cap * crit, -cap * tol, 'rgba(255, 232, 162, 0.8)'],
-      [cap * crit, cap, 'rgba(240, 46, 49, 0.35)'],
-      [-cap, -cap * crit, 'rgba(240, 46, 49, 0.35)'],
-    ];
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height);
-    ctx.clip();
-    for (const [lo, hi, fill] of regions) {
-      const yHi = u.valToPos(hi, 'y', true);
-      const yLo = u.valToPos(lo, 'y', true);
-      if (!Number.isFinite(yHi) || !Number.isFinite(yLo)) continue;
-      ctx.fillStyle = fill;
-      ctx.fillRect(u.bbox.left, yHi, u.bbox.width, yLo - yHi);
-    }
-    ctx.restore();
+    paintCapacityBands(u, bands);
   }
 
   /** Which row of the current run a point on the plotted grid belongs to. */
@@ -506,9 +513,11 @@ export function createChart(parent, spec, opts = {}) {
 
 /**
  * Stacked-area chart for the dataset views: the demand curve with the
- * generation mix that meets it layered underneath.
+ * generation mix that meets it layered underneath (Tutorial 1), or on its own
+ * against the grid connection's capacity bands (Tutorial 3's opening case) --
+ * `opts.bands`, same shape as `createChart`'s, draws the latter.
  */
-export function createStackChart(parent, spec = {}) {
+export function createStackChart(parent, spec = {}, opts = {}) {
   const card = document.createElement('div');
   card.className = 'chart-card';
 
@@ -526,6 +535,11 @@ export function createStackChart(parent, spec = {}) {
 
   parent.append(card);
   let plot = null;
+  const bands = opts.bands || null;
+
+  function drawBands(u) {
+    paintCapacityBands(u, bands);
+  }
 
   const resize = new ResizeObserver(() => {
     if (plot && holder.clientWidth) plot.setSize({ width: holder.clientWidth, height: 300 });
@@ -571,19 +585,23 @@ export function createStackChart(parent, spec = {}) {
       });
       data.push(profile.total);
 
+      const scaleY = {};
+      if (bands && Number.isFinite(bands.cap)) scaleY.range = () => [-bands.cap, bands.cap];
+
       if (plot) plot.destroy();
       plot = new uPlot({
         width: holder.clientWidth || 640,
         height: 300,
         legend: { show: false },
         cursor: { drag: { x: false, y: false } },
-        scales: { x: { time: true } },
+        scales: { x: { time: true }, y: scaleY },
         axes: [
           { grid: { stroke: '#eef2f5' }, ticks: { stroke: '#dbe2e8' } },
           { label: `${profile.label || 'Load'} (${profile.unit || 'kW'})`, labelSize: 28,
             grid: { stroke: '#eef2f5' }, ticks: { stroke: '#dbe2e8' }, size: 56 },
         ],
         series,
+        hooks: { drawClear: [drawBands] },
       }, data, holder);
 
       legend.replaceChildren();

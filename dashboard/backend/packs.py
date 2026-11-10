@@ -653,6 +653,7 @@ def case_payload(case: dict) -> Dict[str, Any]:
         "description": (case.get("description") or "").strip(),
         "kind": case["kind"],
         "scenario": case.get("scenario"),
+        "baseline": case.get("baseline") or {},
         "day": case["day"],
         "controls_heading": case["controls_heading"],
         "controls": case["controls"],
@@ -708,6 +709,9 @@ def check_pack(pack_id: str) -> List[str]:
                 problems.append(
                     f"{where}: baseline scale_by '{scale_by}' is not a control of this case"
                 )
+            bands = case["baseline"].get("bands")
+            if bands is not None and not isinstance(bands.get("cap"), (int, float)):
+                problems.append(f"{where}: baseline bands needs a numeric 'cap'")
             continue
 
         scenario_path = REPO_ROOT / case["scenario"]

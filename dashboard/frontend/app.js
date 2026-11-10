@@ -594,7 +594,12 @@ async function loadBaseline() {
 
     if (!state.stackChart) {
       destroyCharts();
-      state.stackChart = createStackChart(el.charts, { title: 'Demand over the day' });
+      // A dataset case may fix its own capacity bands (Tutorial 3's opening
+      // case: the connection's capacity is not a slider there, unlike the
+      // simulated tasks that reuse the same bands via `bands_from`).
+      state.stackChart = createStackChart(el.charts,
+        { title: caseDef.baseline.title || 'Demand over the day' },
+        { bands: caseDef.baseline.bands || null });
     }
     state.stackChart.update(profile);
     setStatus('idle');

@@ -1,6 +1,7 @@
 {
   "status": "ok",
   "packs": [
+    "grid_congestion",
     "power_balance"
   ],
   "pack_problems": [],

@@ -44,7 +44,10 @@ never in live responses.
 
 A pack is one tutorial; a case is one task within it. `kind` is `"simulation"`
 (runs the engine) or `"dataset"` (read straight from a data file — use the
-baseline route, not `POST /api/runs`).
+baseline route, not `POST /api/runs`). A dataset case also carries its
+`baseline:` config verbatim (see the baseline route below) so the frontend can
+read its `title`/`bands`/etc. without a second request; a simulation case's
+`baseline` is always `{}`.
 
 ```jsonc
 {
@@ -103,13 +106,23 @@ keyed by `id`. `states` render identically but are sent in a separate object.
 {
   "id": "battery_soc",
   "title": "Battery state of charge",
-  "kind": "line",                       // "line" | "line_with_bands" (Tutorial 3)
+  "kind": "line",
   "y_label": "State of charge (%)",
   "y_min": 0, "y_max": 100,
   "limits_from": {"min": "soc_min", "max": "soc_max"},  // draw control values as limit lines
+  "bands_from": {"cap": "connection_capacity"},         // green/amber/red capacity bands (Tutorial 3)
   "series": [{"col": "Battery1.soc", "label": "State of charge", "sign": 1}]
 }
 ```
+
+`kind` is currently always `"line"`; `limits_from` and `bands_from` are
+independent, optional decorations rather than distinct chart kinds, and either
+(or both) may be present. `bands_from` maps `cap` (required) and optionally
+`tol`/`crit` to control ids, resolved live the way `limits_from` is; the
+uncapped `tol`/`crit` defaults (0.67/0.9) match the grid-congestion tutorial's
+own thresholds. The dataset view's stack chart (`GET .../baseline`) takes the
+same bands as a fixed `{cap, tol, crit}` object under its `baseline:` block
+instead, since it has no simulation controls to resolve them from.
 
 `sign: -1` on a series means plot the negated column (the tutorials show
 `-Controller1.dump` as "power from grid").
@@ -187,7 +200,11 @@ profile is the pack's `baseline.scale_by`, not a fixed name.
 }
 ```
 
-Layers stack to `total`; draw them as a stackplot under the load curve.
+Layers stack to `total`; draw them as a stackplot under the load curve. A case
+with no `mix` (Tutorial 3's opening case) has no `layers` at all — a plain
+line. Its capacity bands come from the case object's own `baseline.bands`
+(`{cap, tol, crit}`), not from this response: they are fixed for a dataset
+case, since there are no simulation controls to resolve them from live.
 
 Baseline values are rounded to 6 decimal places to keep the payload small (sub-milliwatt on a kW-scale load). Simulation results from `/results` are *not* rounded.
 

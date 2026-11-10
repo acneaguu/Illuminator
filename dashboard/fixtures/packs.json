@@ -1,6 +1,881 @@
 {
   "packs": [
     {
+      "id": "grid_congestion",
+      "title": "Grid Congestion",
+      "subtitle": "How much can a neighbourhood's connection to the grid take before it strains?",
+      "cases": [
+        {
+          "id": "conventional",
+          "title": "Base case: conventional supply",
+          "description": "Every house draws its electricity straight from the grid. The neighbourhood's connection has a fixed capacity -- how close does an ordinary day come to it?",
+          "kind": "dataset",
+          "scenario": null,
+          "baseline": {
+            "file": "load_data.txt",
+            "value_column": "load",
+            "scale_by": "houses",
+            "scale": "raw",
+            "unit": "kW",
+            "label": "Load on the connection",
+            "title": "Load on the grid connection",
+            "bands": {
+              "cap": 15,
+              "tol": 0.67,
+              "crit": 0.9
+            }
+          },
+          "day": {
+            "default": "2012-02-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Winter": "2012-02-01",
+              "Summer": "2012-07-06"
+            }
+          },
+          "controls_heading": "Neighbourhood",
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 30,
+              "step": 1,
+              "default": 10,
+              "targets": []
+            }
+          ],
+          "states": [],
+          "charts": [],
+          "monitor_items": [],
+          "summary": {},
+          "defaults": {
+            "day": "2012-02-01",
+            "settings": {
+              "houses": 10
+            },
+            "states": {}
+          }
+        },
+        {
+          "id": "renewables",
+          "title": "With local renewables",
+          "description": "Solar panels and a small wind turbine now cover part of the demand. Local generation eases the connection during the day, but surplus generation pushes the other way -- towards the same limit.",
+          "kind": "simulation",
+          "scenario": "examples/Tutorial3/Tutorial_physical_congestion_RES.yaml",
+          "baseline": {},
+          "day": {
+            "default": "2012-02-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Winter": "2012-02-01",
+              "Summer": "2012-07-06"
+            }
+          },
+          "controls_heading": "Settings",
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 30,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Load1",
+                  "param": "houses",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "pv_cap",
+              "label": "Installed solar capacity",
+              "unit": "W",
+              "type": "slider",
+              "min": 0,
+              "max": 40000,
+              "step": 1000,
+              "default": 20000,
+              "targets": [
+                {
+                  "model": "PV1",
+                  "param": "cap",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "wind_rated",
+              "label": "Wind turbine rated power",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0,
+              "max": 20,
+              "step": 0.5,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Wind1",
+                  "param": "p_rated",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "connection_capacity",
+              "label": "Grid connection capacity",
+              "unit": "kW",
+              "type": "slider",
+              "min": 5,
+              "max": 40,
+              "step": 1,
+              "default": 15,
+              "targets": [
+                {
+                  "model": "Grid1",
+                  "param": "connection_capacity",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "gridconnect_ctrl",
+                  "scale": 1.0
+                }
+              ]
+            }
+          ],
+          "states": [],
+          "charts": [
+            {
+              "id": "power_balance",
+              "title": "Power balance over the day",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "series": [
+                {
+                  "col": "Load1.load_dem",
+                  "label": "Load demand"
+                },
+                {
+                  "col": "Controller1.res_load",
+                  "label": "Residual load"
+                },
+                {
+                  "col": "PV1.pv_gen",
+                  "label": "Solar generation"
+                },
+                {
+                  "col": "Wind1.wind_gen",
+                  "label": "Wind generation"
+                },
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            },
+            {
+              "id": "grid_load",
+              "title": "Load on the grid connection",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "bands_from": {
+                "cap": "connection_capacity"
+              },
+              "series": [
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            }
+          ],
+          "monitor_items": [
+            "Controller1.dump",
+            "Controller1.res_load",
+            "PV1.pv_gen",
+            "Wind1.wind_gen",
+            "Load1.load_dem",
+            "Grid1.flag_warning",
+            "Grid1.flag_critical"
+          ],
+          "summary": {
+            "sum_columns": {
+              "Load1.load_dem": "Load demand (kW)",
+              "PV1.pv_gen": "PV generation (kW)",
+              "Wind1.wind_gen": "Wind generation (kW)",
+              "Controller1.res_load": "Residual load (kW)",
+              "Controller1.dump": "Net exchange with grid (kW)"
+            },
+            "sample_columns": {
+              "Grid1.flag_warning": "Steps in warning (share of day)",
+              "Grid1.flag_critical": "Steps critical (share of day)"
+            }
+          },
+          "defaults": {
+            "day": "2012-02-01",
+            "settings": {
+              "houses": 10,
+              "pv_cap": 20000,
+              "wind_rated": 10,
+              "connection_capacity": 15
+            },
+            "states": {}
+          }
+        },
+        {
+          "id": "renewables_battery",
+          "title": "With a battery",
+          "description": "A communal battery stores surplus generation instead of exporting it straight away, and discharges to cover demand later -- easing the connection at both ends of the day.",
+          "kind": "simulation",
+          "scenario": "examples/Tutorial3/Tutorial_physical_congestion_RES_bat.yaml",
+          "baseline": {},
+          "day": {
+            "default": "2012-02-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Winter": "2012-02-01",
+              "Summer": "2012-07-06"
+            }
+          },
+          "controls_heading": "Settings",
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 30,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Load1",
+                  "param": "houses",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "pv_cap",
+              "label": "Installed solar capacity",
+              "unit": "W",
+              "type": "slider",
+              "min": 0,
+              "max": 40000,
+              "step": 1000,
+              "default": 20000,
+              "targets": [
+                {
+                  "model": "PV1",
+                  "param": "cap",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "wind_rated",
+              "label": "Wind turbine rated power",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0,
+              "max": 20,
+              "step": 0.5,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Wind1",
+                  "param": "p_rated",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "connection_capacity",
+              "label": "Grid connection capacity",
+              "unit": "kW",
+              "type": "slider",
+              "min": 5,
+              "max": 40,
+              "step": 1,
+              "default": 15,
+              "targets": [
+                {
+                  "model": "Grid1",
+                  "param": "connection_capacity",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "gridconnect_ctrl",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_energy",
+              "label": "Battery capacity",
+              "unit": "kWh",
+              "type": "slider",
+              "min": 5,
+              "max": 100,
+              "step": 5,
+              "default": 40,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_energy",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_power",
+              "label": "Battery power limit",
+              "unit": "kW",
+              "type": "slider",
+              "min": 5,
+              "max": 100,
+              "step": 5,
+              "default": 40,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_p",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Battery1",
+                  "param": "min_p",
+                  "scale": -1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "max_p",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_min",
+              "label": "Minimum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 50,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_max",
+              "label": "Maximum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 50,
+              "max": 100,
+              "step": 1,
+              "default": 90,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                }
+              ]
+            }
+          ],
+          "states": [
+            {
+              "id": "soc_start",
+              "label": "Battery charge at start of day",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 100,
+              "step": 5,
+              "default": 10,
+              "model": "Battery1",
+              "state": "soc"
+            }
+          ],
+          "charts": [
+            {
+              "id": "power_balance",
+              "title": "Power balance over the day",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "series": [
+                {
+                  "col": "Load1.load_dem",
+                  "label": "Load demand"
+                },
+                {
+                  "col": "Controller1.res_load",
+                  "label": "Residual load"
+                },
+                {
+                  "col": "PV1.pv_gen",
+                  "label": "Solar generation"
+                },
+                {
+                  "col": "Wind1.wind_gen",
+                  "label": "Wind generation"
+                },
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            },
+            {
+              "id": "grid_load",
+              "title": "Load on the grid connection",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "bands_from": {
+                "cap": "connection_capacity"
+              },
+              "series": [
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            },
+            {
+              "id": "battery_soc",
+              "title": "Battery state of charge",
+              "kind": "line",
+              "y_label": "State of charge (%)",
+              "y_min": 0,
+              "y_max": 100,
+              "limits_from": {
+                "min": "soc_min",
+                "max": "soc_max"
+              },
+              "series": [
+                {
+                  "col": "Battery1.soc",
+                  "label": "State of charge"
+                }
+              ]
+            }
+          ],
+          "monitor_items": [
+            "Controller1.dump",
+            "Controller1.res_load",
+            "Controller1.flow2b",
+            "Battery1.p_out",
+            "Battery1.soc",
+            "PV1.pv_gen",
+            "Wind1.wind_gen",
+            "Load1.load_dem",
+            "Grid1.flag_warning",
+            "Grid1.flag_critical"
+          ],
+          "summary": {
+            "sum_columns": {
+              "Load1.load_dem": "Load demand (kW)",
+              "PV1.pv_gen": "PV generation (kW)",
+              "Wind1.wind_gen": "Wind generation (kW)",
+              "Controller1.res_load": "Residual load (kW)",
+              "Controller1.flow2b": "Power to battery (kW)",
+              "Battery1.p_out": "Battery power (kW)",
+              "Controller1.dump": "Net exchange with grid (kW)"
+            },
+            "sample_columns": {
+              "Battery1.soc": "Battery SOC (%)",
+              "Grid1.flag_warning": "Steps in warning (share of day)",
+              "Grid1.flag_critical": "Steps critical (share of day)"
+            }
+          },
+          "defaults": {
+            "day": "2012-02-01",
+            "settings": {
+              "houses": 10,
+              "pv_cap": 20000,
+              "wind_rated": 10,
+              "connection_capacity": 15,
+              "battery_energy": 40,
+              "battery_power": 40,
+              "soc_min": 10,
+              "soc_max": 90
+            },
+            "states": {
+              "soc_start": 10
+            }
+          }
+        },
+        {
+          "id": "electrified",
+          "title": "Electrified homes",
+          "description": "Heat pumps and EV charging add new, flexible load. Switch on load-shifting to let the controller delay some of it when the connection is under strain, instead of always drawing it on demand.",
+          "kind": "simulation",
+          "scenario": "examples/Tutorial3/Tutorial_physical_congestion_RES_bat_elec_loadshift.yaml",
+          "baseline": {},
+          "day": {
+            "default": "2012-02-01",
+            "min": "2012-01-01",
+            "max": "2012-12-30",
+            "presets": {
+              "Winter": "2012-02-01",
+              "Summer": "2012-07-06"
+            }
+          },
+          "controls_heading": "Settings",
+          "controls": [
+            {
+              "id": "houses",
+              "label": "Houses in the neighbourhood",
+              "type": "slider",
+              "min": 1,
+              "max": 30,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Load1",
+                  "param": "houses",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Load_EV1",
+                  "param": "houses_case",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Load_HP1",
+                  "param": "houses_case",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "pv_cap",
+              "label": "Installed solar capacity",
+              "unit": "W",
+              "type": "slider",
+              "min": 0,
+              "max": 40000,
+              "step": 1000,
+              "default": 20000,
+              "targets": [
+                {
+                  "model": "PV1",
+                  "param": "cap",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "wind_rated",
+              "label": "Wind turbine rated power",
+              "unit": "kW",
+              "type": "slider",
+              "min": 0,
+              "max": 20,
+              "step": 0.5,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Wind1",
+                  "param": "p_rated",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "connection_capacity",
+              "label": "Grid connection capacity",
+              "unit": "kW",
+              "type": "slider",
+              "min": 5,
+              "max": 40,
+              "step": 1,
+              "default": 15,
+              "targets": [
+                {
+                  "model": "Grid1",
+                  "param": "connection_capacity",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "gridconnect_ctrl",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_energy",
+              "label": "Battery capacity",
+              "unit": "kWh",
+              "type": "slider",
+              "min": 5,
+              "max": 100,
+              "step": 5,
+              "default": 40,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_energy",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "battery_power",
+              "label": "Battery power limit",
+              "unit": "kW",
+              "type": "slider",
+              "min": 5,
+              "max": 100,
+              "step": 5,
+              "default": 40,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "max_p",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Battery1",
+                  "param": "min_p",
+                  "scale": -1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "max_p",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_min",
+              "label": "Minimum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 50,
+              "step": 1,
+              "default": 10,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_min",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "soc_max",
+              "label": "Maximum state of charge",
+              "unit": "%",
+              "type": "slider",
+              "min": 50,
+              "max": 100,
+              "step": 1,
+              "default": 90,
+              "targets": [
+                {
+                  "model": "Battery1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                },
+                {
+                  "model": "Controller1",
+                  "param": "soc_max",
+                  "scale": 1.0
+                }
+              ]
+            },
+            {
+              "id": "load_shift",
+              "label": "Load-shifting control",
+              "type": "toggle",
+              "default": false,
+              "targets": [
+                {
+                  "model": "Controller1",
+                  "param": "load_shift_active",
+                  "scale": 1.0
+                }
+              ]
+            }
+          ],
+          "states": [
+            {
+              "id": "soc_start",
+              "label": "Battery charge at start of day",
+              "unit": "%",
+              "type": "slider",
+              "min": 0,
+              "max": 100,
+              "step": 5,
+              "default": 10,
+              "model": "Battery1",
+              "state": "soc"
+            }
+          ],
+          "charts": [
+            {
+              "id": "power_balance",
+              "title": "Power balance over the day",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "series": [
+                {
+                  "col": "Load1.load_dem",
+                  "label": "Load demand"
+                },
+                {
+                  "col": "Load_EV1.load_EV",
+                  "label": "EV charging"
+                },
+                {
+                  "col": "Load_HP1.load_HP",
+                  "label": "Heat pump"
+                },
+                {
+                  "col": "Controller1.res_load",
+                  "label": "Residual load"
+                },
+                {
+                  "col": "PV1.pv_gen",
+                  "label": "Solar generation"
+                },
+                {
+                  "col": "Wind1.wind_gen",
+                  "label": "Wind generation"
+                },
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            },
+            {
+              "id": "grid_load",
+              "title": "Load on the grid connection",
+              "kind": "line",
+              "y_label": "Power (kW)",
+              "bands_from": {
+                "cap": "connection_capacity"
+              },
+              "series": [
+                {
+                  "col": "Controller1.dump",
+                  "label": "Load on the connection",
+                  "sign": -1
+                }
+              ]
+            },
+            {
+              "id": "battery_soc",
+              "title": "Battery state of charge",
+              "kind": "line",
+              "y_label": "State of charge (%)",
+              "y_min": 0,
+              "y_max": 100,
+              "limits_from": {
+                "min": "soc_min",
+                "max": "soc_max"
+              },
+              "series": [
+                {
+                  "col": "Battery1.soc",
+                  "label": "State of charge"
+                }
+              ]
+            }
+          ],
+          "monitor_items": [
+            "Controller1.dump",
+            "Controller1.res_load",
+            "Controller1.flow2b",
+            "Battery1.p_out",
+            "Battery1.soc",
+            "PV1.pv_gen",
+            "Wind1.wind_gen",
+            "Load1.load_dem",
+            "Load_EV1.load_EV",
+            "Load_HP1.load_HP",
+            "Grid1.flag_warning",
+            "Grid1.flag_critical"
+          ],
+          "summary": {
+            "sum_columns": {
+              "Load1.load_dem": "Load demand (kW)",
+              "Load_EV1.load_EV": "EV charging (kW)",
+              "Load_HP1.load_HP": "Heat pump demand (kW)",
+              "PV1.pv_gen": "PV generation (kW)",
+              "Wind1.wind_gen": "Wind generation (kW)",
+              "Controller1.res_load": "Residual load (kW)",
+              "Controller1.flow2b": "Power to battery (kW)",
+              "Battery1.p_out": "Battery power (kW)",
+              "Controller1.dump": "Net exchange with grid (kW)"
+            },
+            "sample_columns": {
+              "Battery1.soc": "Battery SOC (%)",
+              "Grid1.flag_warning": "Steps in warning (share of day)",
+              "Grid1.flag_critical": "Steps critical (share of day)"
+            }
+          },
+          "defaults": {
+            "day": "2012-02-01",
+            "settings": {
+              "houses": 10,
+              "pv_cap": 20000,
+              "wind_rated": 10,
+              "connection_capacity": 15,
+              "battery_energy": 40,
+              "battery_power": 40,
+              "soc_min": 10,
+              "soc_max": 90,
+              "load_shift": false
+            },
+            "states": {
+              "soc_start": 10
+            }
+          }
+        }
+      ]
+    },
+    {
       "id": "power_balance",
       "title": "Power Balancing for a Local Community",
       "subtitle": "How much of a neighbourhood's demand can local wind and solar cover?",
@@ -11,6 +886,26 @@
           "description": "The neighbourhood's electricity demand for one day, and which sources the national grid mix uses to meet it. No local generation yet.",
           "kind": "dataset",
           "scenario": null,
+          "baseline": {
+            "file": "load_data.txt",
+            "value_column": "load",
+            "scale_by": "houses",
+            "scale": "power",
+            "unit": "kW",
+            "label": "Total load",
+            "mix": {
+              "coal": 0.1431,
+              "Oil": 0.0126,
+              "Nuclear": 0.0342,
+              "Biofuels": 0.0612,
+              "Waste": 0.0346,
+              "Hydro": 0.0004,
+              "Natural Gas": 0.3934,
+              "Solar": 0.1384,
+              "Wind": 0.1778,
+              "Other": 0.0043
+            }
+          },
           "day": {
             "default": "2012-06-01",
             "min": "2012-01-01",
@@ -51,6 +946,7 @@
           "description": "Add rooftop solar and a wind turbine. The residual load is what is left for the grid to supply once local generation is subtracted.",
           "kind": "simulation",
           "scenario": "examples/Tutorial1/Tutorial_Power_Balance_a.yaml",
+          "baseline": {},
           "day": {
             "default": "2012-06-01",
             "min": "2012-01-01",
@@ -173,6 +1069,7 @@
           "description": "A communal battery stores surplus local generation instead of exporting it, and discharges when demand exceeds generation.",
           "kind": "simulation",
           "scenario": "examples/Tutorial1/Tutorial_Power_Balance_b.yaml",
+          "baseline": {},
           "day": {
             "default": "2012-06-01",
             "min": "2012-01-01",

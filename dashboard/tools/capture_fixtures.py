@@ -44,6 +44,13 @@ from dashboard.backend.runs import RunConflict, RunManager
 FIXTURES = packs.DASHBOARD_DIR / "fixtures"
 PACK = "power_balance"
 
+# The demo run (below) only ever tells Tutorial 1's story -- mock mode has
+# always been one canned narrative regardless of which pack is on screen.
+# Grid Congestion still needs its own topology/baseline fixtures so switching
+# to it in mock mode shows the right diagram and dataset preview.
+GRID_PACK = "grid_congestion"
+GRID_SIM_CASES = ("renewables", "renewables_battery", "electrified")
+
 
 def _write(name: str, payload: Any, mode: str, note: str = "") -> None:
     FIXTURES.mkdir(parents=True, exist_ok=True)
@@ -186,6 +193,13 @@ def capture_via_call(call: Callable[..., Any], mode: str, label: str) -> None:
     _write("baseline_base",
            call("GET", f"/api/packs/{PACK}/cases/base/baseline?day=2012-06-01&houses=5"), mode)
 
+    _write("pack_grid_congestion", call("GET", f"/api/packs/{GRID_PACK}"), mode)
+    for case in GRID_SIM_CASES:
+        _write(f"topology_{case}", call("GET", f"/api/packs/{GRID_PACK}/cases/{case}/topology"), mode)
+    _write("baseline_conventional",
+           call("GET", f"/api/packs/{GRID_PACK}/cases/conventional/baseline"
+                       "?day=2012-02-01&houses=10"), mode)
+
     created = call("POST", "/api/runs", {"pack": PACK, "case": "res_battery",
                                          "day": "2012-06-01", "states": {"soc_start": 90}})
     run_id = created["id"]
@@ -261,6 +275,16 @@ def capture_direct() -> None:
     profile = baseline.profile(pack, case, "2012-06-01", settings)
     profile["notes"] = notes
     _write("baseline_base", profile, mode, note)
+
+    _write("pack_grid_congestion", packs.pack_payload(packs.load_pack(GRID_PACK)), mode, note)
+    for case_id in GRID_SIM_CASES:
+        grid_pack, grid_case = packs.get_case(GRID_PACK, case_id)
+        _write(f"topology_{case_id}", packs.build_topology(grid_pack, grid_case), mode, note)
+    grid_pack, grid_case = packs.get_case(GRID_PACK, "conventional")
+    grid_settings, grid_notes = packs.resolve_settings(grid_case, {"houses": 10})
+    grid_profile = baseline.profile(grid_pack, grid_case, "2012-02-01", grid_settings)
+    grid_profile["notes"] = grid_notes
+    _write("baseline_conventional", grid_profile, mode, note)
 
     # A real run, polled tightly so a mid-run snapshot can be captured.
     for existing in manager.active_runs():

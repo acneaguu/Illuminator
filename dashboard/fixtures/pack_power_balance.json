@@ -9,6 +9,26 @@
       "description": "The neighbourhood's electricity demand for one day, and which sources the national grid mix uses to meet it. No local generation yet.",
       "kind": "dataset",
       "scenario": null,
+      "baseline": {
+        "file": "load_data.txt",
+        "value_column": "load",
+        "scale_by": "houses",
+        "scale": "power",
+        "unit": "kW",
+        "label": "Total load",
+        "mix": {
+          "coal": 0.1431,
+          "Oil": 0.0126,
+          "Nuclear": 0.0342,
+          "Biofuels": 0.0612,
+          "Waste": 0.0346,
+          "Hydro": 0.0004,
+          "Natural Gas": 0.3934,
+          "Solar": 0.1384,
+          "Wind": 0.1778,
+          "Other": 0.0043
+        }
+      },
       "day": {
         "default": "2012-06-01",
         "min": "2012-01-01",
@@ -49,6 +69,7 @@
       "description": "Add rooftop solar and a wind turbine. The residual load is what is left for the grid to supply once local generation is subtracted.",
       "kind": "simulation",
       "scenario": "examples/Tutorial1/Tutorial_Power_Balance_a.yaml",
+      "baseline": {},
       "day": {
         "default": "2012-06-01",
         "min": "2012-01-01",
@@ -171,6 +192,7 @@
       "description": "A communal battery stores surplus local generation instead of exporting it, and discharges when demand exceeds generation.",
       "kind": "simulation",
       "scenario": "examples/Tutorial1/Tutorial_Power_Balance_b.yaml",
+      "baseline": {},
       "day": {
         "default": "2012-06-01",
         "min": "2012-01-01",

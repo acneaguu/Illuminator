@@ -104,7 +104,7 @@ export const api = {
   },
 
   async baseline(pack, caseId, { day, settings } = {}) {
-    if (MOCK) return fixture('baseline_base');
+    if (MOCK) return fixture(`baseline_${caseId}`);
     const query = new URLSearchParams();
     if (day) query.set('day', day);
     // Control values keyed by control id, exactly as POST /api/runs takes

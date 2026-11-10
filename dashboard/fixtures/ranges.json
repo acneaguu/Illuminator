@@ -1,17 +1,17 @@
 {
-  "id": "20260925-153030-power_balance-res_battery",
+  "id": "20260925-171625-power_balance-res_battery",
   "ranges": {
-    "Controller1.dump": {
-      "min": -4.965164638614732,
-      "max": -0.013221223284827067
+    "Controller1.res_load": {
+      "min": 0.013229223284827063,
+      "max": 4.965172638614733
     },
     "Controller1.flow2b": {
       "min": -0.6400000000000001,
       "max": -7.999999999995566e-06
     },
-    "Controller1.res_load": {
-      "min": 0.013229223284827063,
-      "max": 4.965172638614733
+    "Controller1.dump": {
+      "min": -4.965164638614732,
+      "max": -0.013221223284827067
     },
     "Battery1.p_out": {
       "min": -0.6400000000000001,
